@@ -1,0 +1,478 @@
+/**
+ * `app/(protected)/personnel/page.tsx`
+ *
+ * Sprint 4 — Global Personel listesi (proje bağlamı yok).
+ *
+ * ŞantiyePro `resources/js/pages/personnel/index.tsx` davranışı korunur:
+ *   - Stat kartları (toplam aktif personel, bugün şantiyede, bu ay maaş)
+ *   - Aktif/pasif filtresi
+ *   - Günlük/aylık maaş filtresi
+ *   - Arama
+ *   - Personel kartları: avatar, isim, rol, maaş, aktif toggle
+ *
+ * API: GET /api/personnel
+ */
+
+'use client';
+
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  DollarSign,
+  RotateCcw,
+  Search,
+  Users,
+} from 'lucide-react';
+import { EmptyState } from '@/components/common/empty-state';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  usePersonnel,
+  useTogglePersonnelStatus,
+} from '@/hooks/use-santiyepro-api';
+import {
+  PersonnelRoleLabels,
+  PersonnelStatus,
+  PersonnelStatusVariants,
+  SalaryType,
+  SalaryTypeLabels,
+  type PersonnelStatus as PersonnelStatusKey,
+  type SalaryType as SalaryTypeKey,
+} from '@/lib/enums';
+import type { Personnel, PersonnelAssignment } from '@/lib/api/types';
+import { cn } from '@/lib/utils';
+import { formatAmount, getInitials, storageUrl } from '@/lib/helpers';
+
+const AVATAR_COLORS = [
+  'bg-blue-500/10 text-blue-500',
+  'bg-violet-500/10 text-violet-500',
+  'bg-emerald-500/10 text-emerald-500',
+  'bg-amber-500/10 text-amber-500',
+  'bg-rose-500/10 text-rose-500',
+  'bg-cyan-500/10 text-cyan-500',
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getRoleLabel(role?: string | null, customRole?: string | null): string {
+  if (!role && !customRole) return '—';
+  if (role === '__custom__' || (role && !PersonnelRoleLabels[role])) {
+    return customRole ?? role ?? '—';
+  }
+  return PersonnelRoleLabels[role ?? ''] ?? customRole ?? role ?? '—';
+}
+
+function getActiveAssignment(p: Personnel): PersonnelAssignment | undefined {
+  return p.assignments?.find((a) => a.is_active) ?? p.assignments?.[0];
+}
+
+function getWage(a?: PersonnelAssignment): {
+  amount: number;
+  unit: string;
+} {
+  if (!a) return { amount: 0, unit: '' };
+  if (a.salary_type === SalaryType.MONTHLY && a.monthly_salary) {
+    return { amount: a.monthly_salary, unit: '/ Ay' };
+  }
+  if (a.daily_wage) return { amount: a.daily_wage, unit: '/ Gün' };
+  return { amount: 0, unit: '' };
+}
+
+export default function PersonnelPage() {
+  const router = useRouter();
+  const personnelQuery = usePersonnel();
+  const toggleMutation = useTogglePersonnelStatus();
+
+  const personnel = useMemo<Personnel[]>(
+    () => personnelQuery.data?.data ?? [],
+    [personnelQuery.data],
+  );
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<PersonnelStatusKey>(
+    PersonnelStatus.ACTIVE,
+  );
+  const [salaryTypeFilter, setSalaryTypeFilter] = useState<
+    'all' | SalaryTypeKey
+  >('all');
+
+  const filteredPersonnel = useMemo(() => {
+    return personnel.filter((p) => {
+      // Aktif filtresi
+      if (
+        statusFilter === PersonnelStatus.ACTIVE &&
+        p.status !== PersonnelStatus.ACTIVE
+      ) {
+        return false;
+      }
+      if (
+        statusFilter === PersonnelStatus.PASSIVE &&
+        p.status === PersonnelStatus.ACTIVE
+      ) {
+        return false;
+      }
+
+      // Maaş tipi filtresi
+      if (salaryTypeFilter !== 'all') {
+        const a = getActiveAssignment(p);
+        const match = p.assignments?.some(
+          (x) => x.is_active && x.salary_type === salaryTypeFilter,
+        );
+        if (!match) return false;
+        // Unused variable warning suppression
+        void a;
+      }
+
+      // Arama
+      if (search) {
+        const q = search.toLowerCase();
+        return (
+          p.name.toLowerCase().includes(q) ||
+          (p.role ?? '').toLowerCase().includes(q) ||
+          (p.custom_role ?? '').toLowerCase().includes(q)
+        );
+      }
+
+      return true;
+    });
+  }, [personnel, statusFilter, salaryTypeFilter, search]);
+
+  const activeCount = useMemo(
+    () => personnel.filter((p) => p.status === PersonnelStatus.ACTIVE).length,
+    [personnel],
+  );
+  const passiveCount = useMemo(
+    () =>
+      personnel.filter((p) => p.status !== PersonnelStatus.ACTIVE).length,
+    [personnel],
+  );
+
+  const totalMonthlySalary = useMemo(() => {
+    return personnel
+      .filter((p) => p.status === PersonnelStatus.ACTIVE)
+      .reduce((sum, p) => {
+        const a = getActiveAssignment(p);
+        if (a?.salary_type === SalaryType.MONTHLY && a.monthly_salary) {
+          return sum + a.monthly_salary;
+        }
+        if (a?.salary_type === SalaryType.WEEKLY && a.weekly_salary) {
+          return sum + a.weekly_salary * 4.33;
+        }
+        if (a?.salary_type === SalaryType.DAILY && a.daily_wage) {
+          return sum + a.daily_wage * 22;
+        }
+        return sum;
+      }, 0);
+  }, [personnel]);
+
+  const handleToggle = (p: Personnel) => {
+    const newStatus =
+      p.status === PersonnelStatus.ACTIVE
+        ? PersonnelStatus.PASSIVE
+        : PersonnelStatus.ACTIVE;
+    toggleMutation.mutate({ id: p.id, status: newStatus });
+  };
+
+  const handleSelect = (p: Personnel) => {
+    router.push(`/personnel/${p.id}`);
+  };
+
+  if (personnelQuery.isLoading) {
+    return (
+      <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
+        <div>
+          <h1 className="text-base font-medium">Personel</h1>
+          <p className="text-xs text-muted-foreground">
+            Çalışanlar, puantaj ve maaş yönetimi.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-28 animate-pulse rounded-xl bg-muted" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
+      {/* Başlık */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-base font-medium">Personel</h1>
+          <p className="text-xs text-muted-foreground">
+            Çalışanlar, puantaj ve maaş yönetimi.
+          </p>
+        </div>
+        <Button size="sm">
+          <Users className="me-1 size-4" />
+          Personel Ekle
+        </Button>
+      </div>
+
+      {/* Stat Kartları */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-5">
+                <Users className="size-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Aktif Personel</p>
+                <p className="text-2xl font-bold">{activeCount}</p>
+                <p className="text-xs text-muted-foreground">
+                  Pasif / Ayrılan: {passiveCount}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-amber-500/10 p-5">
+                <DollarSign className="size-4 text-amber-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">Bu Ay Maaş (tahmini)</p>
+                <p className="text-2xl font-bold">
+                  {formatAmount(totalMonthlySalary)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Aktif personelin maaş türüne göre
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtre barı */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setSalaryTypeFilter(
+                salaryTypeFilter === SalaryType.DAILY ? 'all' : SalaryType.DAILY,
+              )
+            }
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+              salaryTypeFilter === SalaryType.DAILY
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+          >
+            {SalaryTypeLabels[SalaryType.DAILY]}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setSalaryTypeFilter(
+                salaryTypeFilter === SalaryType.MONTHLY
+                  ? 'all'
+                  : SalaryType.MONTHLY,
+              )
+            }
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+              salaryTypeFilter === SalaryType.MONTHLY
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+          >
+            {SalaryTypeLabels[SalaryType.MONTHLY]}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Personel ara..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-64 pl-9"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusFilter(PersonnelStatus.ACTIVE)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+              statusFilter === PersonnelStatus.ACTIVE
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+          >
+            Aktif <span className="text-xs opacity-70">{activeCount}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter(PersonnelStatus.PASSIVE)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+              statusFilter === PersonnelStatus.PASSIVE
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+          >
+            Pasif / Ayrılan{' '}
+            <span className="text-xs opacity-70">{passiveCount}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Liste */}
+      {filteredPersonnel.length === 0 ? (
+        <Card>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={Users}
+              title="Personel bulunamadı"
+              description={
+                personnel.length === 0
+                  ? 'İlk personelinizi ekleyin.'
+                  : 'Filtre veya arama kelimesini değiştirip tekrar deneyin.'
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {filteredPersonnel.map((p) => {
+            const roleLabel = getRoleLabel(p.role, p.custom_role);
+            const a = getActiveAssignment(p);
+            const { amount: wage, unit: wageUnit } = getWage(a);
+            const color = getAvatarColor(p.name);
+            const isLeft = p.status === PersonnelStatus.LEFT;
+            const isActive = p.status === PersonnelStatus.ACTIVE;
+
+            return (
+              <div
+                key={p.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => handleSelect(p)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSelect(p);
+                  }
+                }}
+                className={cn(
+                  'flex cursor-pointer items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-accent/50',
+                  !isActive && !isLeft && 'opacity-60',
+                )}
+              >
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  {p.photo ? (
+                    <img
+                      src={storageUrl(p.photo)}
+                      alt={p.name}
+                      className="size-11 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={cn(
+                        'flex size-11 items-center justify-center rounded-full text-xs font-bold',
+                        color,
+                      )}
+                    >
+                      {getInitials(p.name)}
+                    </div>
+                  )}
+                  <div
+                    className={cn(
+                      'absolute right-0 bottom-0 size-3 rounded-full border-2 border-background',
+                      isActive ? 'bg-green-500' : 'bg-gray-400',
+                    )}
+                  />
+                </div>
+
+                {/* Bilgiler */}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={cn(
+                      'truncate text-sm font-bold',
+                      isLeft && 'text-muted-foreground line-through',
+                    )}
+                  >
+                    {p.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>{roleLabel}</span>
+                    {wage > 0 && (
+                      <>
+                        <span>·</span>
+                        <span>
+                          {formatAmount(wage)} {wageUnit}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sağ: Aktif toggle veya rozet */}
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant={PersonnelStatusVariants[p.status] ?? 'secondary'}>
+                    {isActive ? 'Aktif' : isLeft ? 'Ayrıldı' : 'Pasif'}
+                  </Badge>
+                  {isLeft ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggle(p);
+                      }}
+                      title="Yeniden aktifleştir"
+                      className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      <RotateCcw className="size-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isActive}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggle(p);
+                      }}
+                      disabled={toggleMutation.isPending}
+                      title={isActive ? 'Pasife al' : 'Aktifleştir'}
+                      className={cn(
+                        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors',
+                        isActive ? 'bg-primary' : 'bg-muted',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'size-5 rounded-full bg-background shadow-sm transition-transform',
+                          isActive ? 'translate-x-5' : 'translate-x-0',
+                        )}
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

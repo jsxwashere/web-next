@@ -76,6 +76,8 @@ export interface ApiOptions extends Omit<RequestInit, 'body'> {
   accessToken?: string;
   /** Retry sayısı (default: 1) — 401'de kaç kez tekrar denensin */
   maxRetries?: number;
+  /** Query string parametreleri (string|number|boolean|undefined). undefined/boş elemanlar atlanır. */
+  params?: Record<string, string | number | boolean | undefined>;
 }
 
 export class ApiError extends Error {
@@ -90,6 +92,20 @@ export class ApiError extends Error {
   }
 }
 
+/** Build ?key=value&... query string, skipping undefined / empty. */
+function buildQueryString(
+  params?: Record<string, string | number | boolean | undefined>,
+): string {
+  if (!params) return '';
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === '') continue;
+    sp.set(k, String(v));
+  }
+  const qs = sp.toString();
+  return qs ? `?${qs}` : '';
+}
+
 /**
  * Laravel'a authenticated fetch çağrısı yapar. 401 yakalanırsa
  * refresh dener, başarısız olursa `/signin`'e yönlendirir.
@@ -98,7 +114,13 @@ export async function apiFetchAuthed<T = unknown>(
   path: string,
   options: ApiOptions = {},
 ): Promise<T> {
-  const { body, accessToken: tokenOverride, maxRetries = 1, ...rest } = options;
+  const {
+    body,
+    accessToken: tokenOverride,
+    maxRetries = 1,
+    params,
+    ...rest
+  } = options;
 
   const init: RequestInit & { _retry?: boolean } = { ...rest };
 
@@ -115,10 +137,11 @@ export async function apiFetchAuthed<T = unknown>(
     }
   }
 
-  // Base URL prepend
+  // Query string + base URL prepend
+  const qs = buildQueryString(params);
   const url = path.startsWith('http')
-    ? path
-    : `${LARAVEL_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+    ? `${path}${qs}`
+    : `${LARAVEL_BASE}${path.startsWith('/') ? path : `/${path}`}${qs}`;
 
   // Bearer header
   const token = tokenOverride ?? tokenProvider()?.accessToken;
