@@ -1,7 +1,7 @@
 /**
  * `app/(protected)/page.tsx`
  *
- * Sprint 4 — Dashboard (Pano).
+ * Sprint 4 + 6 — Dashboard (Pano).
  *
  * ŞantiyePro `resources/js/pages/dashboard.tsx` davranışı birebir korunur:
  *   - KPI kartları (aktif şantiyeler, toplam alacak, bu ay gider, bekleyen hakediş, en yakın ödeme)
@@ -9,6 +9,8 @@
  *   - Son hareketler
  *
  * API'ler: GET /api/dashboard/stats + GET /api/dashboard/recent-activity
+ *
+ * Sprint 6 — i18n entegrasyonu (useTranslation + pages.dashboard.* keys).
  */
 
 'use client';
@@ -22,6 +24,7 @@ import {
   Receipt,
   Wallet,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -30,15 +33,15 @@ import {
 } from '@/hooks/use-santiyepro-api';
 import { formatAmount, formatShortDate } from '@/lib/helpers';
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 6) return 'İyi geceler';
-  if (hour < 12) return 'Günaydın';
-  if (hour < 18) return 'İyi günler';
-  return 'İyi akşamlar';
+function getGreetingKey(hour: number): string {
+  if (hour < 6) return 'greetings.night';
+  if (hour < 12) return 'greetings.morning';
+  if (hour < 18) return 'greetings.afternoon';
+  return 'greetings.evening';
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const statsQuery = useDashboardStats();
   const activityQuery = useRecentActivity(10);
 
@@ -46,7 +49,10 @@ export default function DashboardPage() {
   const activities = activityQuery.data?.activities ?? [];
   const nearest = stats?.critical_payments?.items?.[0] ?? null;
 
-  const greeting = useMemo(() => getGreeting(), []);
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    return t(getGreetingKey(hour));
+  }, [t]);
 
   return (
     <div className="flex flex-col gap-8 px-4 py-6 lg:px-6">
@@ -57,7 +63,7 @@ export default function DashboardPage() {
             {greeting}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Projelerinizin bugünkü genel durumu aşağıda.
+            {t('pages.dashboard.subtitle')}
           </p>
         </div>
       </div>
@@ -74,14 +80,14 @@ export default function DashboardPage() {
               <Building2 className="size-5" />
             </span>
             <span className="text-sm font-medium text-muted-foreground">
-              Aktif Şantiyeler
+              {t('pages.dashboard.activeProjects')}
             </span>
           </div>
           <div className="text-2xl font-bold text-foreground">
             {statsQuery.isLoading ? '—' : (stats?.active_projects ?? 0)}
           </div>
           <div className="mt-auto flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-            <span>Devam eden projeler</span>
+            <span>{t('pages.dashboard.activeProjectsSub')}</span>
             <ChevronRight className="size-3.5" />
           </div>
         </Link>
@@ -93,7 +99,7 @@ export default function DashboardPage() {
               <Wallet className="size-5" />
             </span>
             <span className="text-sm font-medium text-muted-foreground">
-              Toplam Alacak
+              {t('pages.dashboard.totalCollections')}
             </span>
           </div>
           <div className="text-2xl font-bold text-foreground">
@@ -102,7 +108,7 @@ export default function DashboardPage() {
               : formatAmount(stats?.total_collections ?? 0)}
           </div>
           <div className="mt-auto text-sm font-medium text-muted-foreground">
-            Tahsil edilecek
+            {t('pages.dashboard.totalCollectionsSub')}
           </div>
         </div>
 
@@ -113,7 +119,7 @@ export default function DashboardPage() {
               <Receipt className="size-5" />
             </span>
             <span className="text-sm font-medium text-muted-foreground">
-              Bu Ay Gider
+              {t('pages.dashboard.monthlyPayments')}
             </span>
           </div>
           <div className="text-2xl font-bold text-red-600">
@@ -122,7 +128,7 @@ export default function DashboardPage() {
               : formatAmount(stats?.monthly_payments ?? 0)}
           </div>
           <div className="mt-auto text-sm font-medium text-muted-foreground">
-            Bu ay ödenen
+            {t('pages.dashboard.monthlyPaymentsSub')}
           </div>
         </div>
 
@@ -133,7 +139,7 @@ export default function DashboardPage() {
               <Receipt className="size-5" />
             </span>
             <span className="text-sm font-medium text-muted-foreground">
-              Bekleyen Hakediş
+              {t('pages.dashboard.pendingProgress')}
             </span>
           </div>
           <div className="text-2xl font-bold text-foreground">
@@ -142,7 +148,7 @@ export default function DashboardPage() {
               : formatAmount(stats?.pending_progress_payments ?? 0)}
           </div>
           <div className="mt-auto text-sm font-medium text-muted-foreground">
-            Sözleşme + Personel borçları
+            {t('pages.dashboard.pendingProgressSub')}
           </div>
         </div>
       </div>
@@ -158,11 +164,11 @@ export default function DashboardPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-muted-foreground">
-                    En Yakın Ödeme
+                    {t('pages.dashboard.nearestPayment')}
                   </span>
                   {nearest.status === 'overdue' && (
                     <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-red-700 uppercase">
-                      Kritik
+                      {t('pages.dashboard.critical')}
                     </span>
                   )}
                 </div>
@@ -180,7 +186,7 @@ export default function DashboardPage() {
                 href={nearest.url}
                 className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
               >
-                Detay <ChevronRight className="size-3.5" />
+                {t('common.buttons.detail')} <ChevronRight className="size-3.5" />
               </Link>
             )}
           </CardContent>
@@ -194,7 +200,7 @@ export default function DashboardPage() {
           <CardContent className="flex flex-col gap-4 p-5">
             <header className="flex items-center justify-between gap-4">
               <h2 className="text-lg font-semibold text-foreground">
-                Kritik Ödemeler
+                {t('pages.dashboard.criticalPayments')}
               </h2>
             </header>
             {statsQuery.isLoading ? (
@@ -217,7 +223,7 @@ export default function DashboardPage() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-foreground">
-                          {payment.name || 'Ödeme'}
+                          {payment.name || t('pages.dashboard.payment')}
                         </span>
                         <span className="mt-0.5 block text-[13px] font-semibold text-muted-foreground">
                           {formatAmount(payment.amount)}
@@ -225,7 +231,7 @@ export default function DashboardPage() {
                       </span>
                       {payment.days_overdue > 0 && (
                         <span className="inline-flex shrink-0 items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-red-700 uppercase">
-                          {payment.days_overdue} Gün Gecikme
+                          {payment.days_overdue} {t('pages.dashboard.daysOverdue')}
                         </span>
                       )}
                     </>
@@ -251,8 +257,8 @@ export default function DashboardPage() {
               </ul>
             ) : (
               <EmptyState
-                title="Gecikmiş ödeme bulunmuyor"
-                description="Tüm ödemeler zamanında."
+                title={t('pages.dashboard.noOverdue')}
+                description={t('pages.dashboard.noOverdueDesc')}
               />
             )}
           </CardContent>
@@ -263,7 +269,7 @@ export default function DashboardPage() {
           <CardContent className="flex flex-col gap-4 p-5">
             <header className="flex items-center justify-between gap-4">
               <h2 className="text-lg font-semibold text-foreground">
-                Son Hareketler
+                {t('pages.dashboard.recentActivity')}
               </h2>
             </header>
             {activityQuery.isLoading ? (
@@ -274,8 +280,8 @@ export default function DashboardPage() {
               </div>
             ) : activities.length === 0 ? (
               <EmptyState
-                title="Henüz aktivite yok"
-                description="Yapılan ödemeler, tahsilatlar ve saha raporları burada listelenir."
+                title={t('pages.dashboard.noActivity')}
+                description={t('pages.dashboard.noActivityDesc')}
               />
             ) : (
               <ul className="flex max-h-[400px] flex-col overflow-y-auto">

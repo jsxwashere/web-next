@@ -23,6 +23,7 @@ import {
   Search,
   Users,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -88,6 +89,7 @@ function getWage(a?: PersonnelAssignment): {
 
 export default function PersonnelPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const personnelQuery = usePersonnel();
   const toggleMutation = useTogglePersonnelStatus();
 
@@ -189,9 +191,9 @@ export default function PersonnelPage() {
     return (
       <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
         <div>
-          <h1 className="text-base font-medium">Personel</h1>
+          <h1 className="text-base font-medium">{t('pages.personnel.title')}</h1>
           <p className="text-xs text-muted-foreground">
-            Çalışanlar, puantaj ve maaş yönetimi.
+            {t('pages.personnel.subtitle')}
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -208,14 +210,14 @@ export default function PersonnelPage() {
       {/* Başlık */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-base font-medium">Personel</h1>
+          <h1 className="text-base font-medium">{t('pages.personnel.title')}</h1>
           <p className="text-xs text-muted-foreground">
-            Çalışanlar, puantaj ve maaş yönetimi.
+            {t('pages.personnel.subtitle')}
           </p>
         </div>
         <Button size="sm">
           <Users className="me-1 size-4" />
-          Personel Ekle
+          {t('pages.personnel.addPersonnel')}
         </Button>
       </div>
 
@@ -228,7 +230,7 @@ export default function PersonnelPage() {
                 <Users className="size-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Aktif Personel</p>
+                <p className="text-xs text-muted-foreground">{t('pages.personnel.activePersonnel')}</p>
                 <p className="text-2xl font-bold">{activeCount}</p>
                 <p className="text-xs text-muted-foreground">
                   Pasif / Ayrılan: {passiveCount}
@@ -301,7 +303,7 @@ export default function PersonnelPage() {
           <div className="relative">
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Personel ara..."
+              placeholder={t('pages.personnel.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-64 pl-9"
@@ -341,11 +343,15 @@ export default function PersonnelPage() {
           <CardContent className="p-6">
             <EmptyState
               icon={Users}
-              title="Personel bulunamadı"
+              title={
+                personnel.length === 0
+                  ? t('pages.personnel.noPersonnel')
+                  : t('pages.personnel.noResults')
+              }
               description={
                 personnel.length === 0
-                  ? 'İlk personelinizi ekleyin.'
-                  : 'Filtre veya arama kelimesini değiştirip tekrar deneyin.'
+                  ? t('pages.personnel.noPersonnelDesc')
+                  : t('pages.personnel.noResultsDesc')
               }
             />
           </CardContent>

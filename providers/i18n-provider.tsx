@@ -3,13 +3,14 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { DirectionProvider as RadixDirectionProvider } from '@radix-ui/react-direction';
-import { I18N_LANGUAGES } from '@/i18n/config';
+import { I18N_LANGUAGES, DEFAULT_LANGUAGE_CODE } from '@/i18n/config';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import translation files
 import enTranslations from '@/i18n/messages/en.json';
+import trTranslations from '@/i18n/messages/tr.json';
 import arTranslations from '@/i18n/messages/ar.json';
 import esTranslations from '@/i18n/messages/es.json';
 import deTranslations from '@/i18n/messages/de.json';
@@ -27,6 +28,7 @@ function I18nProvider({ children }: I18nProviderProps) {
     if (!i18n.isInitialized) {
       const resources = {
         en: { translation: enTranslations },
+        tr: { translation: trTranslations },
         ar: { translation: arTranslations },
         es: { translation: esTranslations },
         de: { translation: deTranslations },
@@ -38,7 +40,12 @@ function I18nProvider({ children }: I18nProviderProps) {
         .use(initReactI18next)
         .init({
           resources,
-          fallbackLng: 'en',
+          // Default to Turkish — ŞantiyePro is a Turkish SaaS.
+          // If the user has a stored preference (localStorage) the
+          // LanguageDetector will override this on first paint.
+          fallbackLng: DEFAULT_LANGUAGE_CODE,
+          supportedLngs: ['tr', 'en', 'ar', 'es', 'de', 'ch'],
+          load: 'currentOnly',
           debug: process.env.NODE_ENV === 'development',
 
           interpolation: {
@@ -56,6 +63,11 @@ function I18nProvider({ children }: I18nProviderProps) {
           },
         })
         .then(() => {
+          // If detector could not resolve a supported language, force
+          // the default so we never render an empty translation key.
+          if (!i18n.language || !I18N_LANGUAGES.some((l) => l.code === i18n.language)) {
+            i18n.changeLanguage(DEFAULT_LANGUAGE_CODE);
+          }
           setIsI18nInitialized(true);
         });
     } else {
@@ -84,7 +96,7 @@ function I18nProvider({ children }: I18nProviderProps) {
   }, []);
 
   // Get current language for direction
-  const currentLanguage = I18N_LANGUAGES.find((lang) => lang.code === (i18n.language || 'en')) || I18N_LANGUAGES[0];
+  const currentLanguage = I18N_LANGUAGES.find((lang) => lang.code === (i18n.language || DEFAULT_LANGUAGE_CODE)) || I18N_LANGUAGES[0];
 
   // Don't render until i18n is initialized
   if (!isI18nInitialized) {
@@ -108,6 +120,9 @@ const useLanguage = () => {
   const currentLanguage = I18N_LANGUAGES.find((lang) => lang.code === i18n.language) || I18N_LANGUAGES[0];
 
   const changeLanguage = (code: string) => {
+    if (!I18N_LANGUAGES.some((lang) => lang.code === code)) {
+      return;
+    }
     i18n.changeLanguage(code);
   };
 

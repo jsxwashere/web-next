@@ -22,6 +22,7 @@ import {
   X as XIcon,
   Search,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,16 +38,17 @@ import type { Firm } from '@/lib/api/types';
 
 type TypeFilter = 'all' | FirmTypeKey;
 
-const TYPE_TABS: { value: TypeFilter; label: string }[] = [
-  { value: 'all', label: 'Tümü' },
-  { value: FirmType.PROVIDER, label: FirmTypeLabels[FirmType.PROVIDER] },
-  { value: FirmType.SUBCONTRACTOR, label: FirmTypeLabels[FirmType.SUBCONTRACTOR] },
-  { value: FirmType.WORKER, label: FirmTypeLabels[FirmType.WORKER] },
-  { value: FirmType.INSTITUTION, label: FirmTypeLabels[FirmType.INSTITUTION] },
-  { value: FirmType.OTHER, label: FirmTypeLabels[FirmType.OTHER] },
-];
-
 export default function FirmsPage() {
+  const { t } = useTranslation();
+  const TYPE_TABS: { value: TypeFilter; label: string }[] = [
+    { value: 'all', label: t('common.labels.all') },
+    { value: FirmType.PROVIDER, label: FirmTypeLabels[FirmType.PROVIDER] },
+    { value: FirmType.SUBCONTRACTOR, label: FirmTypeLabels[FirmType.SUBCONTRACTOR] },
+    { value: FirmType.WORKER, label: FirmTypeLabels[FirmType.WORKER] },
+    { value: FirmType.INSTITUTION, label: FirmTypeLabels[FirmType.INSTITUTION] },
+    { value: FirmType.OTHER, label: FirmTypeLabels[FirmType.OTHER] },
+  ];
+
   const firmsQuery = useFirms();
 
   const firms = useMemo<Firm[]>(
@@ -85,9 +87,9 @@ export default function FirmsPage() {
     <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Başlık */}
       <div>
-        <h1 className="text-base font-medium">Firmalar</h1>
+        <h1 className="text-base font-medium">{t('pages.firms.title')}</h1>
         <p className="text-xs text-muted-foreground">
-          Tüm projelerdeki tedarikçi, taşeron ve kurum kayıtlarınız.
+          {t('pages.firms.subtitle')}
         </p>
       </div>
 
@@ -120,7 +122,7 @@ export default function FirmsPage() {
         <div className="relative flex-1 sm:ms-auto sm:w-64">
           <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Firma ara..."
+            placeholder={t('pages.firms.searchPlaceholder')}
             className="h-8 w-full ps-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -130,7 +132,7 @@ export default function FirmsPage() {
               type="button"
               onClick={() => setSearch('')}
               className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label="Aramayı temizle"
+              aria-label={t('pages.firms.clearSearch')}
             >
               <XIcon className="size-3.5" />
             </button>
@@ -152,13 +154,13 @@ export default function FirmsPage() {
               icon={Building2}
               title={
                 search || activeType !== 'all'
-                  ? 'Filtreye uygun firma bulunamadı'
-                  : 'Henüz firma yok'
+                  ? t('pages.firms.noResults')
+                  : t('pages.firms.noFirms')
               }
               description={
                 search || activeType !== 'all'
-                  ? 'Filtrelerinizi temizleyip tekrar deneyin.'
-                  : 'İlk firmanızı ekleyin; ödeme, sözleşme ve malzeme kayıtları burada bağlanır.'
+                  ? t('common.messages.clearFilters')
+                  : t('pages.firms.noFirmsDesc')
               }
             />
           </CardContent>
@@ -198,7 +200,7 @@ export default function FirmsPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 {firm.tax_number && (
                   <span className="flex items-center gap-1">
-                    <span className="font-semibold">VKN:</span>
+                    <span className="font-semibold">{t('pages.firms.taxNumber')}:</span>
                     <span className="tabular-nums">{firm.tax_number}</span>
                   </span>
                 )}

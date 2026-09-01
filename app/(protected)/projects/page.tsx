@@ -29,6 +29,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,13 +47,6 @@ import type { Project } from '@/lib/api/types';
 
 type StatusFilter = 'all' | ProjectStatusType;
 
-const STATUS_TABS: { value: StatusFilter; label: string }[] = [
-  { value: 'all', label: 'Tümü' },
-  { value: ProjectStatus.IN_PROGRESS, label: ProjectStatusLabels[ProjectStatus.IN_PROGRESS] },
-  { value: ProjectStatus.COMPLETED, label: ProjectStatusLabels[ProjectStatus.COMPLETED] },
-  { value: ProjectStatus.PASSIVE, label: ProjectStatusLabels[ProjectStatus.PASSIVE] },
-];
-
 const TYPE_ICONS: Record<string, LucideIcon> = {
   [ProjectType.CO_BUILD]: Building2,
   [ProjectType.OWN_LAND]: LandPlot,
@@ -62,6 +56,14 @@ const TYPE_ICONS: Record<string, LucideIcon> = {
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const STATUS_TABS: { value: StatusFilter; label: string }[] = [
+    { value: 'all', label: t('common.labels.all') },
+    { value: ProjectStatus.IN_PROGRESS, label: ProjectStatusLabels[ProjectStatus.IN_PROGRESS] },
+    { value: ProjectStatus.COMPLETED, label: ProjectStatusLabels[ProjectStatus.COMPLETED] },
+    { value: ProjectStatus.PASSIVE, label: ProjectStatusLabels[ProjectStatus.PASSIVE] },
+  ];
+
   const projectsQuery = useProjects();
 
   const projects = useMemo<Project[]>(
@@ -114,9 +116,9 @@ export default function ProjectsPage() {
       <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-base font-medium">Projeler</h1>
+            <h1 className="text-base font-medium">{t('pages.projects.title')}</h1>
             <p className="text-xs text-muted-foreground">
-              Tüm projelerinizi tek listede görüntüleyin.
+              {t('pages.projects.subtitle')}
             </p>
           </div>
         </div>
@@ -133,14 +135,14 @@ export default function ProjectsPage() {
   if (projectsQuery.error) {
     return (
       <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
-        <h1 className="text-base font-medium">Projeler</h1>
+        <h1 className="text-base font-medium">{t('pages.projects.title')}</h1>
         <EmptyState
           icon={FolderOpen}
-          title="Bir hata oluştu"
-          description="Projeler yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin."
+          title={t('pages.projects.error')}
+          description={t('pages.projects.errorDesc')}
           action={
             <Button size="sm" onClick={() => projectsQuery.refetch()}>
-              Yeniden Dene
+              {t('common.buttons.retry')}
             </Button>
           }
         />
@@ -153,9 +155,9 @@ export default function ProjectsPage() {
       {/* Başlık */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-base font-medium">Projeler</h1>
+          <h1 className="text-base font-medium">{t('pages.projects.title')}</h1>
           <p className="text-xs text-muted-foreground">
-            Tüm projelerinizi tek listede görüntüleyin.
+            {t('pages.projects.subtitle')}
           </p>
         </div>
       </div>
@@ -190,7 +192,7 @@ export default function ProjectsPage() {
           <div className="relative flex-1 sm:w-48">
             <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Proje ara..."
+              placeholder={t('pages.projects.searchPlaceholder')}
               className="h-8 w-full ps-8"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -205,12 +207,12 @@ export default function ProjectsPage() {
             {viewMode === 'list' ? (
               <>
                 <LayoutGrid className="size-3.5" />
-                Kart
+                {t('common.buttons.card')}
               </>
             ) : (
               <>
                 <List className="size-3.5" />
-                Liste
+                {t('common.buttons.list')}
               </>
             )}
           </Button>
@@ -254,17 +256,17 @@ export default function ProjectsPage() {
                     <div className="flex items-center gap-1.5">
                       <MapPin className="size-3 shrink-0 text-muted-foreground/60" />
                       <span className="truncate">
-                        {project.location ?? 'Konum Belirtilmemiş'}
+                        {project.location ?? t('pages.projects.noLocation')}
                       </span>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <span className="flex items-center gap-1.5">
                         <Users className="size-3" />
-                        <span>0 Personel</span>
+                        <span>{t('pages.projects.personnelCount')}</span>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Building2 className="size-3" />
-                        <span>0 Firma</span>
+                        <span>{t('pages.projects.firmCount')}</span>
                       </span>
                     </div>
                   </div>
@@ -288,7 +290,7 @@ export default function ProjectsPage() {
                           {project.total_units ?? 0}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Toplam
+                          {t('pages.projects.total')}
                         </span>
                       </div>
                       <div className="flex flex-col items-center gap-0.5">
@@ -296,7 +298,7 @@ export default function ProjectsPage() {
                           {project.sold_count ?? 0}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Satılan
+                          {t('pages.projects.sold')}
                         </span>
                       </div>
                       <div className="flex flex-col items-center gap-0.5">
@@ -304,7 +306,7 @@ export default function ProjectsPage() {
                           {landownerCount > 0 ? landownerCount : 0}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Arsa P.
+                          {t('pages.projects.landowner')}
                         </span>
                       </div>
                       <div className="flex flex-col items-center gap-0.5">
@@ -313,7 +315,7 @@ export default function ProjectsPage() {
                             (project.sold_count ?? 0)}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Kalan
+                          {t('pages.projects.remaining')}
                         </span>
                       </div>
                     </div>
@@ -357,7 +359,7 @@ export default function ProjectsPage() {
                     <div className="flex items-center gap-1.5">
                       <MapPin className="size-3.5 shrink-0 text-muted-foreground/60" />
                       <span className="truncate">
-                        {project.location ?? 'Konum Belirtilmemiş'}
+                        {project.location ?? t('pages.projects.noLocation')}
                       </span>
                     </div>
                   </div>
@@ -381,7 +383,7 @@ export default function ProjectsPage() {
                           {project.total_units ?? 0}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Toplam
+                          {t('pages.projects.total')}
                         </span>
                       </div>
                       <span className="h-6 w-px bg-border" />
@@ -390,7 +392,7 @@ export default function ProjectsPage() {
                           {project.sold_count ?? 0}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Satılan
+                          {t('pages.projects.sold')}
                         </span>
                       </div>
                       <span className="h-6 w-px bg-border" />
@@ -399,7 +401,7 @@ export default function ProjectsPage() {
                           {landownerCount > 0 ? landownerCount : 0}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Arsa P.
+                          {t('pages.projects.landowner')}
                         </span>
                       </div>
                       <span className="h-6 w-px bg-border" />
@@ -409,7 +411,7 @@ export default function ProjectsPage() {
                             (project.sold_count ?? 0)}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          Kalan
+                          {t('pages.projects.remaining')}
                         </span>
                       </div>
                     </div>
@@ -426,13 +428,13 @@ export default function ProjectsPage() {
               icon={FolderOpen}
               title={
                 search || activeTab !== 'all'
-                  ? 'Filtreye uygun proje bulunamadı'
-                  : 'Henüz proje yok'
+                  ? t('pages.projects.noResults')
+                  : t('pages.projects.noProjects')
               }
               description={
                 search || activeTab !== 'all'
-                  ? 'Filtrelerinizi temizleyip tekrar deneyin.'
-                  : 'İlk projenizi oluşturun; zaman çizelgesi burada belirir.'
+                  ? t('common.messages.clearFilters')
+                  : t('pages.projects.noProjectsDesc')
               }
             />
           </CardContent>

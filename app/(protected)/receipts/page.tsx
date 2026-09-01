@@ -25,6 +25,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ import type { ReceiptItem } from '@/lib/api/types';
 import { formatAmount, formatDateTr, getEnumLabel } from '@/lib/helpers';
 
 export default function ReceiptsPage() {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const receiptsQuery = useReceipts();
   const uploadMutation = useUploadReceipts();
@@ -71,7 +73,7 @@ export default function ReceiptsPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     if (files.length > 20) {
-      toast.error('Tek seferde en fazla 20 dekont yükleyebilirsiniz.');
+      toast.error(t('pages.receipts.maxFilesError'));
       return;
     }
     setSelectedFiles(files);
@@ -79,11 +81,11 @@ export default function ReceiptsPage() {
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
-      toast.error('Önce bir dekont seçin.');
+      toast.error(t('pages.receipts.noFileError'));
       return;
     }
     if (selectedFiles.length > 20) {
-      toast.error('Tek seferde en fazla 20 dekont yükleyebilirsiniz.');
+      toast.error(t('pages.receipts.maxFilesError'));
       return;
     }
 
@@ -117,7 +119,7 @@ export default function ReceiptsPage() {
   const handleDelete = async (item: ReceiptItem) => {
     if (
       typeof window !== 'undefined' &&
-      !window.confirm('Bu dekontu silmek istediğinizden emin misiniz?')
+      !window.confirm(t('pages.receipts.confirmDelete'))
     ) {
       return;
     }
@@ -151,10 +153,9 @@ export default function ReceiptsPage() {
     <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Başlık */}
       <div>
-        <h1 className="text-base font-medium">Dekont Okuma</h1>
+        <h1 className="text-base font-medium">{t('pages.receipts.title')}</h1>
         <p className="text-xs text-muted-foreground">
-          Banka dekontunu yükleyin; tutar, tarih ve karşı taraf otomatik
-          okunsun. Onayladığınızda gerçek ödeme kaydı oluşur.
+          {t('pages.receipts.subtitle')}
         </p>
       </div>
 
@@ -234,7 +235,7 @@ export default function ReceiptsPage() {
                   disabled={receiptsQuery.isFetching}
                 >
                   <RefreshCw className="me-1 size-3" />
-                  Yenile
+                  {t('common.buttons.refresh')}
                 </Button>
               </span>
             ) : null}
@@ -252,14 +253,14 @@ export default function ReceiptsPage() {
           ) : items.length === 0 ? (
             <EmptyState
               icon={Landmark}
-              title="Henüz dekont yok"
-              description="Yukarıdan bir banka dekontu yükleyin; tutar, tarih ve karşı taraf otomatik okunsun."
+              title={t('pages.receipts.noReceipts')}
+              description={t('pages.receipts.noReceiptsDesc')}
             />
           ) : displayItems.length === 0 ? (
             <EmptyState
               icon={CheckCircle}
-              title="Bekleyen dekont yok"
-              description={`Tüm dekontlar tamamlandı. ${completedCount} tamamlanmış dekontu görmek için aşağıdaki "Tamamlananları göster" düğmesini kullanın.`}
+              title={t('pages.receipts.noPending')}
+              description={t('pages.receipts.noPendingDesc')}
             />
           ) : (
             <ul className="flex flex-col gap-2">
@@ -332,7 +333,7 @@ export default function ReceiptsPage() {
                           }
                         >
                           <RefreshCw className="me-1 size-4" />
-                          {reReadingId === item.id ? 'Okunuyor…' : 'Yeniden Oku'}
+                          {reReadingId === item.id ? t('pages.receipts.rereading') : t('pages.receipts.reread')}
                         </Button>
                       )}
                       <Button

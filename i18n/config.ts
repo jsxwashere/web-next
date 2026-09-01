@@ -5,9 +5,18 @@ export interface Language {
   shortName: string;
   direction: 'ltr' | 'rtl';
   flag: string;
+  isDefault?: boolean;
 }
 
 export const I18N_LANGUAGES: Language[] = [
+  {
+    code: 'tr',
+    name: 'Türkçe',
+    shortName: 'TR',
+    direction: 'ltr',
+    flag: '/media/flags/turkey.svg',
+    isDefault: true,
+  },
   {
     code: 'en',
     name: 'English',
@@ -44,3 +53,11 @@ export const I18N_LANGUAGES: Language[] = [
     flag: '/media/flags/china.svg',
   },
 ];
+
+/**
+ * ŞantiyePro default language is Turkish.
+ * The default is set on the `tr` entry; resolve it at runtime so callers
+ * can fall back gracefully if the list ever changes.
+ */
+export const DEFAULT_LANGUAGE_CODE =
+  I18N_LANGUAGES.find((l) => l.isDefault)?.code ?? 'tr';

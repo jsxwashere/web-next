@@ -1,0 +1,186 @@
+{
+  "common": {
+    "buttons": {
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "add": "Ekle",
+      "remove": "Kaldır",
+      "submit": "Gönder",
+      "close": "Kapat",
+      "create": "Oluştur",
+      "new": "Yeni",
+      "search": "Ara",
+      "filter": "Filtrele",
+      "clear": "Temizle",
+      "refresh": "Yenile",
+      "back": "Geri",
+      "next": "İleri",
+      "previous": "Önceki",
+      "retry": "Yeniden Dene",
+      "confirm": "Onayla",
+      "upload": "Yükle",
+      "download": "İndir",
+      "view": "Görüntüle",
+      "detail": "Detay",
+      "card": "Kart",
+      "list": "Liste"
+    },
+    "labels": {
+      "name": "Ad",
+      "email": "E-posta",
+      "password": "Şifre",
+      "username": "Kullanıcı adı",
+      "phone": "Telefon",
+      "address": "Adres",
+      "date": "Tarih",
+      "amount": "Tutar",
+      "status": "Durum",
+      "actions": "İşlemler",
+      "all": "Tümü",
+      "search": "Ara",
+      "loading": "Yükleniyor...",
+      "noData": "Henüz veri yok"
+    },
+    "messages": {
+      "welcome": "Hoş geldiniz",
+      "loading": "Yükleniyor...",
+      "error": "Bir hata oluştu",
+      "success": "İşlem başarıyla tamamlandı",
+      "confirm": "Emin misiniz?",
+      "tryAgain": "Lütfen tekrar deneyin",
+      "refreshPage": "Lütfen sayfayı yenileyin",
+      "noResults": "Sonuç bulunamadı",
+      "clearFilters": "Filtreleri temizleyip tekrar deneyin"
+    },
+    "greetings": {
+      "morning": "Günaydın",
+      "afternoon": "İyi günler",
+      "evening": "İyi akşamlar",
+      "night": "İyi geceler"
+    },
+    "time": {
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "thisWeek": "Bu hafta",
+      "thisMonth": "Bu ay",
+      "thisYear": "Bu yıl"
+    }
+  },
+  "pages": {
+    "home": {
+      "title": "Pano",
+      "description": "ŞantiyePro yönetim paneline hoş geldiniz"
+    },
+    "dashboard": {
+      "title": "Pano",
+      "subtitle": "Projelerinizin bugünkü genel durumu aşağıda.",
+      "activeProjects": "Aktif Şantiyeler",
+      "activeProjectsSub": "Devam eden projeler",
+      "totalCollections": "Toplam Alacak",
+      "totalCollectionsSub": "Tahsil edilecek",
+      "monthlyPayments": "Bu Ay Gider",
+      "monthlyPaymentsSub": "Bu ay ödenen",
+      "pendingProgress": "Bekleyen Hakediş",
+      "pendingProgressSub": "Sözleşme + Personel borçları",
+      "nearestPayment": "En Yakın Ödeme",
+      "critical": "Kritik",
+      "criticalPayments": "Kritik Ödemeler",
+      "recentActivity": "Son Hareketler",
+      "noOverdue": "Gecikmiş ödeme bulunmuyor",
+      "noOverdueDesc": "Tüm ödemeler zamanında.",
+      "noActivity": "Henüz aktivite yok",
+      "noActivityDesc": "Yapılan ödemeler, tahsilatlar ve saha raporları burada listelenir.",
+      "daysOverdue": "Gün Gecikme",
+      "payment": "Ödeme"
+    },
+    "projects": {
+      "title": "Projeler",
+      "subtitle": "Tüm projelerinizi tek listede görüntüleyin.",
+      "noProjects": "Henüz proje yok",
+      "noProjectsDesc": "İlk projenizi oluşturun; zaman çizelgesi burada belirir.",
+      "noResults": "Filtreye uygun proje bulunamadı",
+      "searchPlaceholder": "Proje ara...",
+      "error": "Bir hata oluştu",
+      "errorDesc": "Projeler yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin.",
+      "location": "Konum",
+      "noLocation": "Konum Belirtilmemiş",
+      "personnelCount": "0 Personel",
+      "firmCount": "0 Firma",
+      "total": "Toplam",
+      "sold": "Satılan",
+      "landowner": "Arsa P.",
+      "remaining": "Kalan"
+    },
+    "firms": {
+      "title": "Firmalar",
+      "subtitle": "Tüm projelerdeki tedarikçi, taşeron ve kurum kayıtlarınız.",
+      "noFirms": "Henüz firma yok",
+      "noFirmsDesc": "İlk firmanızı ekleyin; ödeme, sözleşme ve malzeme kayıtları burada bağlanır.",
+      "noResults": "Filtreye uygun firma bulunamadı",
+      "searchPlaceholder": "Firma ara...",
+      "taxNumber": "VKN",
+      "clearSearch": "Aramayı temizle"
+    },
+    "personnel": {
+      "title": "Personel",
+      "subtitle": "Çalışanlar, puantaj ve maaş yönetimi.",
+      "addPersonnel": "Personel Ekle",
+      "activePersonnel": "Aktif Personel",
+      "searchPlaceholder": "Personel ara...",
+      "noResults": "Personel bulunamadı",
+      "noResultsDesc": "Filtre veya arama kelimesini değiştirip tekrar deneyin.",
+      "noPersonnel": "Henüz personel yok",
+      "noPersonnelDesc": "İlk personelinizi ekleyin."
+    },
+    "receipts": {
+      "title": "Makbuzlar",
+      "subtitle": "AI destekli dekont okuma ve arşivleme.",
+      "uploadBank": "Banka dekontunu yükleyin; tutar, tarih ve karşı taraf otomatik",
+      "noReceipts": "Henüz dekont yok",
+      "noReceiptsDesc": "Yukarıdan bir banka dekontu yükleyin; tutar, tarih ve karşı taraf otomatik okunsun.",
+      "noPending": "Bekleyen dekont yok",
+      "noPendingDesc": "Tüm dekontlar tamamlandı.",
+      "showCompleted": "Tamamlananları göster",
+      "hideCompleted": "Tamamlananları gizle",
+      "maxFilesError": "Tek seferde en fazla 20 dekont yükleyebilirsiniz.",
+      "noFileError": "Önce bir dekont seçin.",
+      "confirmDelete": "Bu dekontu silmek istediğinizden emin misiniz?",
+      "rereading": "Okunuyor…",
+      "reread": "Yeniden Oku"
+    },
+    "account": {
+      "title": "Hesap Ayarları",
+      "notifications": {
+        "title": "Bildirimler",
+        "description": "Bildirim tercihlerinizi yönetin"
+      }
+    }
+  },
+  "navigation": {
+    "home": "Ana sayfa",
+    "dashboard": "Pano",
+    "settings": "Ayarlar",
+    "profile": "Profil",
+    "projects": "Projeler",
+    "firms": "Firmalar",
+    "personnel": "Personel",
+    "receipts": "Makbuzlar",
+    "account": "Hesap",
+    "backToHome": "Ana sayfaya dön"
+  },
+  "errors": {
+    "unauthorized": "Yetkisiz erişim.",
+    "system_error": "Üzgünüz! Beklenmeyen bir sorun oluştu. Lütfen biraz sonra tekrar deneyin.",
+    "invalid_input": "Geçersiz giriş. Lütfen verilerinizi kontrol edip tekrar deneyin.",
+    "data_not_found": "İstenen veri bulunamadı.",
+    "delete_restricted_error": "Bu kayıt diğer kayıtlara bağlı olduğu için silinemiyor.",
+    "notFoundTitle": "Sayfa bulunamadı",
+    "notFoundDesc": "Aradığınız sayfa kaldırılmış, taşınmış veya hiç var olmamış olabilir.",
+    "errorTitle": "Bir şeyler ters gitti",
+    "errorDesc": "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin.",
+    "boundaryTitle": "Bu bölüm yüklenemedi",
+    "boundaryDesc": "Beklenmeyen bir hata oluştu. Sayfayı yenilemeyi deneyebilir veya ana sayfaya dönebilirsiniz."
+  }
+}
