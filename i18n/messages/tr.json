@@ -156,6 +156,112 @@
         "title": "Bildirimler",
         "description": "Bildirim tercihlerinizi yönetin"
       }
+    },
+    "projectTabs": {
+      "tahsilatlar": {
+        "title": "Tahsilatlar",
+        "subtitle": "Bu projedeki tahsilatlar ve gelir kayıtları.",
+        "total": "Toplam Tahsilat",
+        "count": "Tahsilat Sayısı",
+        "noCollections": "Henüz tahsilat yok",
+        "noCollectionsDesc": "Tahsilat eklediğinizde burada listelenir.",
+        "noResults": "Filtreye uygun tahsilat bulunamadı",
+        "searchPlaceholder": "Tahsilat ara...",
+        "addCollection": "Yeni Tahsilat"
+      },
+      "odemeler": {
+        "title": "Ödemeler",
+        "subtitle": "Bu projedeki tüm gelir/gider hareketleri.",
+        "expense": "Toplam Gider",
+        "income": "Toplam Gelir",
+        "net": "Net",
+        "overdueCount": "Geciken Ödeme",
+        "noTransactions": "Henüz işlem yok",
+        "noTransactionsDesc": "Ödeme veya tahsilat eklediğinizde burada görünür.",
+        "noResults": "Filtreye uygun işlem yok",
+        "searchPlaceholder": "Açıklama, firma veya kişi ara...",
+        "addTransaction": "Yeni İşlem",
+        "all": "Tümü",
+        "expenseOnly": "Giderler",
+        "incomeOnly": "Gelirler",
+        "paidOnly": "Ödenmiş",
+        "unpaidOnly": "Bekleyen"
+      },
+      "sozlesmeler": {
+        "title": "Sözleşmeler",
+        "subtitle": "Bu projeye bağlı sözleşme kayıtları.",
+        "total": "Sözleşme Tutarı",
+        "paid": "Ödenen",
+        "count": "Sözleşme Sayısı",
+        "noContracts": "Henüz sözleşme yok",
+        "noContractsDesc": "Yüklenici veya tedarikçi sözleşmesi eklediğinizde burada görünür.",
+        "noResults": "Filtreye uygun sözleşme yok",
+        "searchPlaceholder": "Sözleşme veya firma ara...",
+        "addContract": "Yeni Sözleşme"
+      },
+      "personel": {
+        "title": "Personel",
+        "subtitle": "Bu projede görev alan personel ve maaş bilgileri.",
+        "activeCount": "Aktif Personel",
+        "monthlyCost": "Aylık Tahmini Maliyet",
+        "noPersonnel": "Bu projeye henüz personel atanmamış",
+        "noPersonnelDesc": "Personel modülünden bu projeye atama yapabilirsiniz.",
+        "searchPlaceholder": "Personel ara..."
+      },
+      "firmalar": {
+        "title": "Firmalar",
+        "subtitle": "Bu projede işlemi olan tedarikçi, taşeron ve kurumlar.",
+        "noFirms": "Bu projeye henüz firma bağlanmamış",
+        "noFirmsDesc": "Firma eklediğinizde burada görünür.",
+        "searchPlaceholder": "Firma ara..."
+      },
+      "malzeme": {
+        "title": "Malzeme",
+        "subtitle": "Bu projeye ait malzeme ve irsaliye kayıtları.",
+        "total": "Toplam Tutar",
+        "count": "Kalem Sayısı",
+        "noMaterials": "Henüz malzeme kaydı yok",
+        "noMaterialsDesc": "Malzeme/irsaliye eklediğinizde burada görünür.",
+        "searchPlaceholder": "Malzeme veya tedarikçi ara..."
+      },
+      "hakedis": {
+        "title": "Hakediş",
+        "subtitle": "Bu projeye ait hakediş dönemleri ve tutarlar.",
+        "total": "Toplam Hakediş",
+        "pending": "Bekleyen Tutar",
+        "approved": "Onaylanan",
+        "count": "Hakediş Sayısı",
+        "noEntitlements": "Henüz hakediş kaydı yok",
+        "noEntitlementsDesc": "Hakediş oluşturduğunuzda burada listelenir.",
+        "searchPlaceholder": "Firma veya sözleşme ara..."
+      },
+      "raporlar": {
+        "title": "Saha Raporları",
+        "subtitle": "Bu projeye ait günlük şantiye raporları.",
+        "total": "Toplam Rapor",
+        "submitted": "Gönderilen",
+        "lastReport": "Son Rapor",
+        "noReports": "Henüz saha raporu yok",
+        "noReportsDesc": "Yeni bir saha raporu oluşturarak başlayın.",
+        "addReport": "Yeni Saha Raporu",
+        "workDone": "Yapılan İşler",
+        "blockers": "Engeller",
+        "visitors": "Ziyaretçiler",
+        "safetyNotes": "Emniyet Notları"
+      },
+      "cizimler": {
+        "title": "Çizimler",
+        "subtitle": "Bu projeye ait DWG çizim ve revizyonlar.",
+        "noDrawings": "Henüz çizim yüklenmemiş",
+        "noDrawingsDesc": "Yeni bir DWG çizim yükleyerek başlayın.",
+        "addDrawing": "Yeni Çizim",
+        "fileSize": "Boyut",
+        "status": "Durum"
+      },
+      "ayarlar": {
+        "title": "Proje Ayarları",
+        "subtitle": "Proje bilgileri, ekip üyelikleri ve modül tercihleri."
+      }
     }
   },
   "navigation": {

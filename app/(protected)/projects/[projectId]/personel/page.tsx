@@ -1,12 +1,15 @@
-import { Users } from 'lucide-react';
-import { ProjectPlaceholder } from '../_components/project-placeholder';
+import { PersonelContent } from './content';
 
-export default function ProjectPersonelPage() {
-  return (
-    <ProjectPlaceholder
-      title="Personel"
-      description="Bu projede görev alan personel, mesai ve puantaj kayıtları."
-      icon={Users}
-    />
-  );
+/**
+ * Sprint 5 — Proje Personel (project-scoped).
+ *
+ * API: GET /api/projects/{projectId}/personnel
+ */
+export default async function ProjectPersonelPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  return <PersonelContent projectId={projectId} />;
 }

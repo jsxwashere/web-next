@@ -1,12 +1,15 @@
-import { ClipboardList } from 'lucide-react';
-import { ProjectPlaceholder } from '../_components/project-placeholder';
+import { HakedisContent } from './content';
 
-export default function ProjectHakedisPage() {
-  return (
-    <ProjectPlaceholder
-      title="Hakediş"
-      description="Hakediş dönemleri, onay bekleyen kayıtlar ve metraj raporları."
-      icon={ClipboardList}
-    />
-  );
+/**
+ * Sprint 5 — Hakediş (project-scoped).
+ *
+ * API: GET /api/projects/{projectId}/entitlements
+ */
+export default async function ProjectHakedisPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  return <HakedisContent projectId={projectId} />;
 }

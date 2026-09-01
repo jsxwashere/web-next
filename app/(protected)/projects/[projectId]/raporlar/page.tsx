@@ -1,12 +1,15 @@
-import { LineChart } from 'lucide-react';
-import { ProjectPlaceholder } from '../_components/project-placeholder';
+import { RaporlarContent } from './content';
 
-export default function ProjectRaporlarPage() {
-  return (
-    <ProjectPlaceholder
-      title="Raporlar"
-      description="Genel, finansal ve maliyet analiz raporları."
-      icon={LineChart}
-    />
-  );
+/**
+ * Sprint 5 — Saha Raporları (project-scoped).
+ *
+ * API: GET /api/projects/{projectId}/site-reports
+ */
+export default async function ProjectRaporlarPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  return <RaporlarContent projectId={projectId} />;
 }

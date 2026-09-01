@@ -25,14 +25,25 @@ import { useSession } from 'next-auth/react';
 import { api, ApiError } from '@/lib/api/client';
 import type {
   ApiResponse,
+  Collection,
+  Contract,
   DashboardRecentActivity,
   DashboardStats,
+  Drawing,
+  Entitlement,
   Firm,
+  Material,
   PaginatedResponse,
   Personnel,
   Project,
+  ProjectContractsResponse,
+  ProjectEntitlementsResponse,
+  ProjectSiteReportsResponse,
+  ProjectTransactionsResponse,
   QueryParams,
   ReceiptItem,
+  SiteReport,
+  Transaction,
 } from '@/lib/api/types';
 
 const LARAVEL_BASE =
@@ -238,3 +249,211 @@ export function useRecentActivity(
       }) as Promise<DashboardActivityResponse>,
   });
 }
+
+// ============================================
+// PROJE KAPSAMINDAKİ ENDPOINTLER
+// ============================================
+
+// --- TAHSİLATLAR (Collections) — global list, project_id query ile
+
+export type CollectionsResponse = PaginatedResponse<Collection>;
+
+export function useProjectCollections(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<CollectionsResponse, Error> {
+  return useQuery<CollectionsResponse, Error>({
+    queryKey: ['project-collections', projectId, params],
+    queryFn: () =>
+      api.get<CollectionsResponse>('/collections', {
+        params: { project_id: projectId, per_page: 100, ...params },
+      }) as Promise<CollectionsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+// --- TRANSACTIONS (birleşik gelir/gider)
+
+export function useProjectTransactions(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectTransactionsResponse, Error> {
+  return useQuery<ProjectTransactionsResponse, Error>({
+    queryKey: ['project-transactions', projectId, params],
+    queryFn: () =>
+      api.get<ProjectTransactionsResponse>(
+        `/projects/${projectId}/transactions`,
+        { params: { per_page: 25, ...params } },
+      ) as Promise<ProjectTransactionsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+export function useCreateTransaction(
+  projectId: string,
+): UseMutationResult<unknown, Error, Record<string, unknown>> {
+  const queryClient = useQueryClient();
+  return useMutation<unknown, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post(`/transactions`, {
+        ...body,
+        project_id: projectId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['project-transactions', projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['project-collections', projectId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+}
+
+// --- PROJENİN FİRMALARI
+
+type ProjectFirmsResponse = PaginatedResponse<Firm>;
+
+export function useProjectFirms(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectFirmsResponse, Error> {
+  return useQuery<ProjectFirmsResponse, Error>({
+    queryKey: ['project-firms', projectId, params],
+    queryFn: () =>
+      api.get<ProjectFirmsResponse>(`/projects/${projectId}/firms`, {
+        params: { per_page: 100, ...params },
+      }) as Promise<ProjectFirmsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+// --- SÖZLEŞMELER (Contracts)
+
+export function useProjectContracts(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectContractsResponse, Error> {
+  return useQuery<ProjectContractsResponse, Error>({
+    queryKey: ['project-contracts', projectId, params],
+    queryFn: () =>
+      api.get<ProjectContractsResponse>(
+        `/projects/${projectId}/contracts`,
+        { params: { per_page: 25, ...params } },
+      ) as Promise<ProjectContractsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+// --- MALZEMELER (Materials)
+
+type ProjectMaterialsResponse = PaginatedResponse<Material>;
+
+export function useProjectMaterials(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectMaterialsResponse, Error> {
+  return useQuery<ProjectMaterialsResponse, Error>({
+    queryKey: ['project-materials', projectId, params],
+    queryFn: () =>
+      api.get<ProjectMaterialsResponse>(
+        `/projects/${projectId}/materials`,
+        { params: { per_page: 25, ...params } },
+      ) as Promise<ProjectMaterialsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+// --- HAKEDİŞLER (Entitlements)
+
+export function useProjectEntitlements(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectEntitlementsResponse, Error> {
+  return useQuery<ProjectEntitlementsResponse, Error>({
+    queryKey: ['project-entitlements', projectId, params],
+    queryFn: () =>
+      api.get<ProjectEntitlementsResponse>(
+        `/projects/${projectId}/entitlements`,
+        { params: { per_page: 25, ...params } },
+      ) as Promise<ProjectEntitlementsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+// --- SAHA RAPORLARI (Site Reports)
+
+export function useProjectSiteReports(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectSiteReportsResponse, Error> {
+  return useQuery<ProjectSiteReportsResponse, Error>({
+    queryKey: ['project-site-reports', projectId, params],
+    queryFn: () =>
+      api.get<ProjectSiteReportsResponse>(
+        `/projects/${projectId}/site-reports`,
+        { params: { per_page: 25, ...params } },
+      ) as Promise<ProjectSiteReportsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+export function useCreateSiteReport(
+  projectId: string,
+): UseMutationResult<{ data: SiteReport }, Error, Record<string, unknown>> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: SiteReport }, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post<{ data: SiteReport }>(`/site-reports`, {
+        ...body,
+        project: projectId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['project-site-reports', projectId],
+      });
+    },
+  });
+}
+
+// --- ÇİZİMLER (Drawings)
+
+type ProjectDrawingsResponse = PaginatedResponse<Drawing>;
+
+export function useProjectDrawings(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectDrawingsResponse, Error> {
+  return useQuery<ProjectDrawingsResponse, Error>({
+    queryKey: ['project-drawings', projectId, params],
+    queryFn: () =>
+      api.get<ProjectDrawingsResponse>(`/projects/${projectId}/drawings`, {
+        params: { per_page: 50, ...params },
+      }) as Promise<ProjectDrawingsResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+// --- PROJENİN PERSONELLERİ
+
+type ProjectPersonnelResponse = PaginatedResponse<Personnel>;
+
+export function useProjectPersonnel(
+  projectId: string,
+  params: QueryParams = {},
+): UseQueryResult<ProjectPersonnelResponse, Error> {
+  return useQuery<ProjectPersonnelResponse, Error>({
+    queryKey: ['project-personnel', projectId, params],
+    queryFn: () =>
+      api.get<ProjectPersonnelResponse>(`/projects/${projectId}/personnel`, {
+        params: { per_page: 100, ...params },
+      }) as Promise<ProjectPersonnelResponse>,
+    enabled: Boolean(projectId),
+  });
+}
+
+// --- Transactions tablosunda tüm liste erişimi (sortable)
+
+// Type re-export for ergonomic consumers
+export type { Transaction };

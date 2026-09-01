@@ -264,3 +264,288 @@ export type DashboardRecentActivity = {
   amount: number;
   href: string | null;
 };
+
+// ============================================
+// TAHSİLAT (COLLECTION)
+// ============================================
+
+export type Collection = {
+  id: string;
+  sale_id?: string | null;
+  project_id: string;
+  category_id?: string | null;
+  amount: number;
+  currency?: string;
+  collection_date?: string | null;
+  payment_type?: string;
+  description?: string | null;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+// ============================================
+// İŞLEM (TRANSACTION — birleşik gelir/gider)
+// ============================================
+
+export type TransactionKind =
+  | 'firm_payment'
+  | 'employee_payment'
+  | 'salary_payment'
+  | 'collection'
+  | 'owner_payment'
+  | 'kd_payment'
+  | 'kd_collection'
+  | 'barter';
+
+export type TransactionType = 'expense' | 'income';
+
+export type TransactionSource = 'expense' | 'employee' | 'income';
+
+export type Transaction = {
+  id: string;
+  type: TransactionType;
+  source?: TransactionSource;
+  kind: TransactionKind;
+  amount: number;
+  date?: string | null;
+  payment_type?: string | null;
+  description?: string | null;
+  is_paid: boolean;
+  due_date?: string | null;
+  project_id?: string;
+  project_name?: string;
+  contract_id?: string | null;
+  contract_name?: string | null;
+  payment_source_id?: string | null;
+  payment_source_name?: string | null;
+  firm_id?: string | null;
+  firm_name?: string | null;
+  employee_id?: string | null;
+  employee_name?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
+  manual_firm_name?: string | null;
+  currency?: string;
+};
+
+export type TransactionTotals = {
+  expense: number;
+  income: number;
+  net: number;
+};
+
+export type ProjectTransactionsResponse = {
+  data: Transaction[];
+  meta: PaginatedResponse<unknown>['meta'];
+  links: PaginatedResponse<unknown>['links'];
+  totals: TransactionTotals;
+  overall_totals: TransactionTotals;
+  overdue: { count: number; total: number };
+};
+
+// ============================================
+// SÖZLEŞME (CONTRACT)
+// ============================================
+
+export type ContractType = 'fixed' | 'unit_based' | 'material';
+export type ContractStatus = 'draft' | 'active' | 'in_progress' | 'completed' | 'cancelled';
+
+export type ContractDetail = {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total?: number;
+  completed_quantity?: number;
+};
+
+export type Contract = {
+  id: string;
+  name: string;
+  type: ContractType;
+  status: ContractStatus;
+  total_amount: number;
+  paid_amount?: number;
+  start_date?: string;
+  end_date?: string | null;
+  description?: string | null;
+  manual_progress?: number | null;
+  firm_id?: string | null;
+  firm?: { id: string; name: string } | null;
+  details?: ContractDetail[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ProjectContractsResponse = {
+  data: Contract[];
+  meta: PaginatedResponse<unknown>['meta'];
+  links: PaginatedResponse<unknown>['links'];
+  totals: { total_amount: number; paid: number };
+  summary: {
+    total: number;
+    active: number;
+    total_amount: number;
+    paid: number;
+  };
+};
+
+// ============================================
+// MALZEME (MATERIAL)
+// ============================================
+
+export type Material = {
+  id: string;
+  project_id: string;
+  firm_id?: string | null;
+  manual_supplier_name?: string | null;
+  contract_id?: string | null;
+  delivery_date?: string | null;
+  ticket_number?: string | null;
+  is_entitlement?: boolean;
+  is_return?: boolean;
+  description?: string | null;
+  name: string;
+  unit: string;
+  amount: number;
+  supplier_name?: string | null;
+  supplier?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+// ============================================
+// HAKEDİŞ (ENTITLEMENT)
+// ============================================
+
+export type EntitlementStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
+
+export type EntitlementDetail = {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+};
+
+export type Entitlement = {
+  id: string;
+  user_id?: string;
+  project_id: string;
+  firm_id?: string | null;
+  firm_name?: string | null;
+  contract_id?: string | null;
+  delivery_date?: string | null;
+  total_amount: number;
+  status: EntitlementStatus;
+  supplier_id?: string | null;
+  supplier_name?: string | null;
+  date?: string | null;
+  details?: EntitlementDetail[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ProjectEntitlementsResponse = {
+  data: Entitlement[];
+  meta: PaginatedResponse<unknown>['meta'];
+  links: PaginatedResponse<unknown>['links'];
+  totals: { total_amount: number };
+  summary: {
+    total: number;
+    approved: number;
+    total_amount: number;
+    pending_amount: number;
+  };
+};
+
+// ============================================
+// SAHA RAPORU (SITE REPORT)
+// ============================================
+
+export type SiteReportWeather =
+  | 'sunny'
+  | 'cloudy'
+  | 'rainy'
+  | 'stormy'
+  | 'snowy'
+  | 'foggy';
+
+export type SiteReportStatus = 'draft' | 'submitted' | 'approved';
+
+export type SiteReportPhoto = {
+  id: string;
+  image: string;
+  caption?: string | null;
+  order?: number;
+};
+
+export type SiteReport = {
+  id: string;
+  project_id: string;
+  project_name?: string;
+  date: string;
+  work_done?: string;
+  work_summary?: string;
+  obstacles?: string | null;
+  blockers?: string | null;
+  visitors?: string | null;
+  report_date?: string;
+  safety_notes?: string | null;
+  weather?: SiteReportWeather | null;
+  temperature_min_c?: number | null;
+  temperature_max_c?: number | null;
+  status: SiteReportStatus;
+  photos?: SiteReportPhoto[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ProjectSiteReportsResponse = {
+  data: SiteReport[];
+  meta: PaginatedResponse<unknown>['meta'];
+  links: PaginatedResponse<unknown>['links'];
+  totals: { count: number; submitted: number };
+  summary: {
+    total: number;
+    submitted: number;
+    last_report_date: string | null;
+  };
+};
+
+// ============================================
+// ÇİZİM (DRAWING)
+// ============================================
+
+export type DrawingStatus = 'pending' | 'running' | 'success' | 'failed';
+
+export type Drawing = {
+  id: string;
+  project_id: string;
+  name: string;
+  file_path?: string;
+  file_size?: number | null;
+  status: DrawingStatus;
+  created_at?: string;
+  updated_at?: string;
+};
+
+// ============================================
+// PROJE FİRMA (PROJECT FIRMS)
+// ============================================
+
+export type ProjectFirm = Firm & {
+  contracts_count?: number;
+  project_paid?: number;
+};
+
+// ============================================
+// PROJE PERSONEL (PROJECT PERSONNEL)
+// ============================================
+
+export type ProjectPersonnel = Personnel & {
+  project_assignment?: PersonnelAssignment;
+};

@@ -198,3 +198,177 @@ export const PersonnelRoleLabels: Record<string, string> = {
   boyaci: 'Boyacı',
   other: 'Diğer',
 };
+
+// ============================================
+// SÖZLEŞME (CONTRACT)
+// ============================================
+
+export const ContractType = {
+  FIXED: 'fixed',
+  UNIT_BASED: 'unit_based',
+  MATERIAL: 'material',
+} as const;
+export type ContractType = (typeof ContractType)[keyof typeof ContractType];
+
+export const ContractTypeLabels: Record<ContractType, string> = {
+  [ContractType.FIXED]: 'Sabit Fiyat',
+  [ContractType.UNIT_BASED]: 'Birim Fiyatlı',
+  [ContractType.MATERIAL]: 'Malzeme',
+};
+
+export const ContractTypeVariants: Record<ContractType, BadgeVariant> = {
+  [ContractType.FIXED]: 'info',
+  [ContractType.UNIT_BASED]: 'warning',
+  [ContractType.MATERIAL]: 'secondary',
+};
+
+export const ContractStatus = {
+  DRAFT: 'draft',
+  ACTIVE: 'active',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+} as const;
+export type ContractStatus = (typeof ContractStatus)[keyof typeof ContractStatus];
+
+export const ContractStatusLabels: Record<ContractStatus, string> = {
+  [ContractStatus.DRAFT]: 'Taslak',
+  [ContractStatus.ACTIVE]: 'Aktif',
+  [ContractStatus.IN_PROGRESS]: 'Devam Ediyor',
+  [ContractStatus.COMPLETED]: 'Tamamlandı',
+  [ContractStatus.CANCELLED]: 'İptal',
+};
+
+export const ContractStatusVariants: Record<ContractStatus, BadgeVariant> = {
+  [ContractStatus.DRAFT]: 'secondary',
+  [ContractStatus.ACTIVE]: 'success',
+  [ContractStatus.IN_PROGRESS]: 'info',
+  [ContractStatus.COMPLETED]: 'info',
+  [ContractStatus.CANCELLED]: 'destructive',
+};
+
+// ============================================
+// HAKEDİŞ (ENTITLEMENT)
+// ============================================
+
+export const EntitlementStatus = {
+  PENDING: 'pending',
+  IN_REVIEW: 'in_review',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+} as const;
+export type EntitlementStatus =
+  (typeof EntitlementStatus)[keyof typeof EntitlementStatus];
+
+export const EntitlementStatusLabels: Record<EntitlementStatus, string> = {
+  [EntitlementStatus.PENDING]: 'Bekliyor',
+  [EntitlementStatus.IN_REVIEW]: 'İncelemede',
+  [EntitlementStatus.APPROVED]: 'Onaylandı',
+  [EntitlementStatus.REJECTED]: 'Reddedildi',
+};
+
+export const EntitlementStatusVariants: Record<EntitlementStatus, BadgeVariant> = {
+  [EntitlementStatus.PENDING]: 'warning',
+  [EntitlementStatus.IN_REVIEW]: 'info',
+  [EntitlementStatus.APPROVED]: 'success',
+  [EntitlementStatus.REJECTED]: 'destructive',
+};
+
+// ============================================
+// SAHA RAPORU (SITE REPORT)
+// ============================================
+
+export const SiteReportWeather = {
+  SUNNY: 'sunny',
+  CLOUDY: 'cloudy',
+  RAINY: 'rainy',
+  STORMY: 'stormy',
+  SNOWY: 'snowy',
+  FOGGY: 'foggy',
+} as const;
+export type SiteReportWeather =
+  (typeof SiteReportWeather)[keyof typeof SiteReportWeather];
+
+export const SiteReportWeatherLabels: Record<SiteReportWeather, string> = {
+  [SiteReportWeather.SUNNY]: 'Güneşli',
+  [SiteReportWeather.CLOUDY]: 'Bulutlu',
+  [SiteReportWeather.RAINY]: 'Yağmurlu',
+  [SiteReportWeather.STORMY]: 'Fırtınalı',
+  [SiteReportWeather.SNOWY]: 'Karlı',
+  [SiteReportWeather.FOGGY]: 'Sisli',
+};
+
+export const SiteReportStatus = {
+  DRAFT: 'draft',
+  SUBMITTED: 'submitted',
+  APPROVED: 'approved',
+} as const;
+export type SiteReportStatus =
+  (typeof SiteReportStatus)[keyof typeof SiteReportStatus];
+
+export const SiteReportStatusLabels: Record<SiteReportStatus, string> = {
+  [SiteReportStatus.DRAFT]: 'Taslak',
+  [SiteReportStatus.SUBMITTED]: 'Gönderildi',
+  [SiteReportStatus.APPROVED]: 'Onaylandı',
+};
+
+export const SiteReportStatusVariants: Record<SiteReportStatus, BadgeVariant> = {
+  [SiteReportStatus.DRAFT]: 'secondary',
+  [SiteReportStatus.SUBMITTED]: 'info',
+  [SiteReportStatus.APPROVED]: 'success',
+};
+
+// ============================================
+// ÇİZİM (DRAWING)
+// ============================================
+
+export const DrawingStatus = {
+  PENDING: 'pending',
+  RUNNING: 'running',
+  SUCCESS: 'success',
+  FAILED: 'failed',
+} as const;
+export type DrawingStatus = (typeof DrawingStatus)[keyof typeof DrawingStatus];
+
+export const DrawingStatusLabels: Record<DrawingStatus, string> = {
+  [DrawingStatus.PENDING]: 'Bekliyor',
+  [DrawingStatus.RUNNING]: 'İşleniyor',
+  [DrawingStatus.SUCCESS]: 'Tamamlandı',
+  [DrawingStatus.FAILED]: 'Başarısız',
+};
+
+export const DrawingStatusVariants: Record<DrawingStatus, BadgeVariant> = {
+  [DrawingStatus.PENDING]: 'secondary',
+  [DrawingStatus.RUNNING]: 'info',
+  [DrawingStatus.SUCCESS]: 'success',
+  [DrawingStatus.FAILED]: 'destructive',
+};
+
+// ============================================
+// TAHSİLAT ÖDEME TİPİ (PAYMENT TYPE)
+// ============================================
+
+export const PaymentTypeLabels: Record<string, string> = {
+  cash: 'Nakit',
+  bank_transfer: 'Havale/EFT',
+  check: 'Çek',
+  credit_card: 'Kredi Kartı',
+  promissory_note: 'Senet',
+  barter: 'Takas',
+  other: 'Diğer',
+};
+
+// ============================================
+// TRANSACTION KIND → İNSAN OKUR KAYNAK
+// ============================================
+
+export const TransactionKindLabels: Record<string, string> = {
+  firm_payment: 'Firma Ödemesi',
+  employee_payment: 'Personel Ödemesi',
+  salary_payment: 'Maaş',
+  collection: 'Tahsilat',
+  owner_payment: 'Mal Sahibi Ödemesi',
+  kd_payment: 'KD Ödemesi',
+  kd_collection: 'KD Tahsilatı',
+  barter: 'Takas',
+};

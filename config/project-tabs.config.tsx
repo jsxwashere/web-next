@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LineChart,
   Package,
+  PencilRuler,
   ReceiptText,
   Users,
 } from 'lucide-react';
@@ -20,6 +21,7 @@ import { type ProjectTab } from './types';
  *
  * ŞantiyePro modules: Genel, Tahsilatlar, Ödemeler, Sözleşmeler,
  * Personel, Malzeme, Raporlar. "Ayarlar" eklenmiştir (admin).
+ * Sprint 5: Çizimler eklendi.
  */
 export const PROJECT_TABS: ProjectTab[] = [
   {
@@ -66,6 +68,11 @@ export const PROJECT_TABS: ProjectTab[] = [
     title: 'Raporlar',
     segment: 'raporlar',
     icon: LineChart,
+  },
+  {
+    title: 'Çizimler',
+    segment: 'cizimler',
+    icon: PencilRuler,
   },
   {
     title: 'Ayarlar',
