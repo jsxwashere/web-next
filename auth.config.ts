@@ -15,10 +15,9 @@
  *   5. pages               → özel signin/signout sayfaları
  */
 
-import type { Session } from 'next-auth';
+import type { NextAuthConfig, Session } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';
-import type { NextAuthConfig } from 'next-auth';
 import type { MemberPayload } from './lib/auth/types';
 
 /**
@@ -77,8 +76,7 @@ export const authConfig: NextAuthConfig = {
           : 0;
 
       const stillValid =
-        expiresAt > 0 &&
-        Math.floor(Date.now() / 1000) < expiresAt - 30;
+        expiresAt > 0 && Math.floor(Date.now() / 1000) < expiresAt - 30;
 
       if (stillValid) {
         return token;
@@ -107,20 +105,20 @@ export const authConfig: NextAuthConfig = {
 
     /**
      * Session callback — JWT'den client session'ı doldurur.
+     *
+     * ECC P0-3: `refreshToken` ASLA client'a expose edilmez. Sadece
+     * kısa ömürlü `accessToken` ve `accessTokenExpires` forward edilir.
+     * Refresh server-side (`jwt` callback içinde `refreshAccessToken`)
+     * tetiklenir — bkz. `app/api/auth/jwt-refresh-proxy/route.ts` (varsa)
+     * veya yeni `useServerRefresh` helper'ı.
      */
-    async session({
-      session,
-      token,
-    }: {
-      session: Session;
-      token: JWT;
-    }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.accessToken = token.accessToken;
+        session.user.accessTokenExpires = token.accessTokenExpires;
         session.user.roleKey = token.roleKey ?? null;
         session.user.permissions = token.permissions ?? [];
         session.user.member = token.member;
-        session.user.accessTokenExpires = token.accessTokenExpires;
       }
 
       if (token.refreshError && !token.accessToken) {

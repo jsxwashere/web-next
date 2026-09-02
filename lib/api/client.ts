@@ -35,39 +35,59 @@ const LARAVEL_BASE =
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-interface SessionLike {
+/**
+ * Refresh sonucu — sadece erişim token'ı. `refreshToken` artık
+ * client'a hiçbir şekilde ulaşmaz (ECC P0-3); server-side JWT
+ * cookie'de tutulur ve `jwt` callback tarafından kullanılır.
+ */
+export interface SessionLike {
   accessToken?: string;
-  refreshToken?: string;
   accessTokenExpires?: number;
 }
 
 /**
- * Token sağlayıcı — her istekte çağrılır.
- * Default: `useSession()` üzerinden alınır.
- * Test veya multi-tenant için override edilebilir.
+ * **ECC P0-3 — singleton pattern.**
+ *
+ * React StrictMode (dev) bileşenleri mount → unmount → mount yapar.
+ * Module-level `let` değişkenleri HMR ile resetlenebilir ve StrictMode
+ * double-mount sırasında overwrite edilirse session kaybolabilir.
+ * `globalThis.__santiyeproApiClient` tek bir mutable kasa görevi görür.
  */
-let tokenProvider: () => SessionLike | null = () => null;
-let refreshHandler: () => Promise<SessionLike | null> = async () => null;
-let onAuthFailure: () => void = () => {
+interface ApiClientGlobals {
+  tokenProvider?: () => SessionLike | null;
+  refreshHandler?: () => Promise<SessionLike | null>;
+  onAuthFailure?: () => void;
+  refreshInFlight?: Promise<SessionLike | null>;
+}
+
+const G = (
+  typeof globalThis !== 'undefined' ? globalThis : ({} as unknown)
+) as {
+  __santiyeproApiClient?: ApiClientGlobals;
+};
+if (!G.__santiyeproApiClient) G.__santiyeproApiClient = {};
+
+export function configureAuthClient(
+  cfg: Required<
+    Pick<ApiClientGlobals, 'tokenProvider' | 'refreshHandler' | 'onAuthFailure'>
+  >,
+): void {
+  Object.assign(G.__santiyeproApiClient!, cfg);
+}
+
+/**
+ * Test/cleanup için konfig'i sıfırla. StrictMode unmount'ta çağrılır.
+ */
+export function resetAuthClient(): void {
+  G.__santiyeproApiClient = {};
+}
+
+/** Default fallback — provider mount edilmeden çağrılırsa no-op. */
+const defaultAuthFailure = (): void => {
   if (typeof window !== 'undefined') {
     window.location.href = '/signin';
   }
 };
-
-export function configureAuthClient(opts: {
-  tokenProvider?: () => SessionLike | null;
-  refreshHandler?: () => Promise<SessionLike | null>;
-  onAuthFailure?: () => void;
-}) {
-  if (opts.tokenProvider) tokenProvider = opts.tokenProvider;
-  if (opts.refreshHandler) refreshHandler = opts.refreshHandler;
-  if (opts.onAuthFailure) onAuthFailure = opts.onAuthFailure;
-}
-
-/**
- * In-flight refresh isteği (concurrent 401'ler için tek promise paylaşımı)
- */
-let refreshInFlight: Promise<SessionLike | null> | null = null;
 
 export interface ApiOptions extends Omit<RequestInit, 'body'> {
   /** JSON body — verilirse otomatik stringify + Content-Type eklenir */
@@ -143,8 +163,9 @@ export async function apiFetchAuthed<T = unknown>(
     ? `${path}${qs}`
     : `${LARAVEL_BASE}${path.startsWith('/') ? path : `/${path}`}${qs}`;
 
-  // Bearer header
-  const token = tokenOverride ?? tokenProvider()?.accessToken;
+  // Bearer header — provider singleton üzerinden okunur
+  const token =
+    tokenOverride ?? G.__santiyeproApiClient!.tokenProvider?.()?.accessToken;
   if (token) {
     init.headers = {
       ...(init.headers ?? {}),
@@ -163,19 +184,21 @@ export async function apiFetchAuthed<T = unknown>(
     );
   }
 
-  // 401 → refresh dene
+  // 401 → refresh dene (singleton coalescing — race window YOK)
   if (response.status === 401 && !init._retry && maxRetries > 0) {
     init._retry = true;
 
-    if (!refreshInFlight) {
-      refreshInFlight = refreshHandler().finally(() => {
-        setTimeout(() => {
-          refreshInFlight = null;
-        }, 0);
-      });
+    const refreshHandler = G.__santiyeproApiClient!.refreshHandler;
+    const onAuthFailure =
+      G.__santiyeproApiClient!.onAuthFailure ?? defaultAuthFailure;
+
+    if (!refreshHandler) {
+      // Provider mount edilmemişse fallback: signin'e yönlendir
+      onAuthFailure();
+      throw new ApiError(401, 'Authentication failed', null);
     }
 
-    const newSession = await refreshInFlight;
+    const newSession = await tryRefresh(refreshHandler);
 
     if (!newSession?.accessToken) {
       onAuthFailure();
@@ -223,6 +246,34 @@ export async function apiFetchAuthed<T = unknown>(
   } catch {
     return (await response.text()) as unknown as T;
   }
+}
+
+/**
+ * **ECC P0-3 — refresh coalescing (race-free).**
+ *
+ * Promise'ı `await`'ten ÖNCE singleton'a yazıyoruz; birden fazla eşzamanlı
+ * 401 aynı refresh promise'ını paylaşır. Promise sonlandığında slot temizlenir.
+ *
+ * Race window fix:
+ *   ÖNCE: `if (refreshInFlight) await; else { refreshInFlight = handler() }` →
+ *         iki eşzamanlı 401 ikinci `await`'e girmeden `refreshInFlight`'i
+ *         görmeyebilir ve ikinci bir refresh tetiklenirdi.
+ *   SONRA: `refreshInFlight = handler()` her zaman ÖNCE atanır; sonraki
+ *          çağrılar aynı promise'ı paylaşır.
+ */
+async function tryRefresh(
+  handler: () => Promise<SessionLike | null>,
+): Promise<SessionLike | null> {
+  if (G.__santiyeproApiClient!.refreshInFlight) {
+    return G.__santiyeproApiClient!.refreshInFlight;
+  }
+
+  const promise = handler().finally(() => {
+    G.__santiyeproApiClient!.refreshInFlight = undefined;
+  });
+
+  G.__santiyeproApiClient!.refreshInFlight = promise;
+  return promise;
 }
 
 /**

@@ -26,16 +26,29 @@ interface MemberPayload {
 declare module 'next-auth' {
   interface Session {
     user: {
-      /** Laravel `access_token` — axios isteklerinde `Authorization: Bearer` başlığına eklenir */
+      /**
+       * Laravel `access_token` — kısa ömürlü (15 dk). axios isteklerinde
+       * `Authorization: Bearer` başlığına eklenir. Client'ta expose edilir.
+       */
       accessToken?: string;
+      /**
+       * `access_token` Unix-expires (saniye). Bu değer dolduğunda refresh tetiklenir.
+       * Client'ta kalabilir (zamanlama kontrolü için).
+       */
+      accessTokenExpires?: number;
       /** Kullanıcının Spatie rol adı (örn: "admin", "firma_sahibi") */
       roleKey?: string | null;
       /** Tenant/member alt-objesi (Laravel `member` payload'ı ile aynı) */
       member?: MemberPayload;
       /** Spatie `getAllPermissions()` düzleştirilmiş izin listesi */
       permissions?: string[];
-      /** `access_token` Unix-expires (saniye). Bu değer dolduğunda refresh tetiklenir. */
-      accessTokenExpires?: number;
+      /**
+       * NOT: `refreshToken` BURADAN KALDIRILDI (ECC P0-3).
+       * XSS yüzeyinden sıyrılmak için refresh token sadece server-side
+       * JWT cookie'de tutulur. Client refresh'leri `jwt` callback'inden
+       * (server-side) tetiklenir; client tarafı `/api/auth/jwt-refresh`
+       * proxy'siyle refresh yapar.
+       */
       /** Legacy alan — v4 `auth-options.ts` user-management route'ları kullanıyor */
       avatar?: string | null;
       roleId?: string;

@@ -51,11 +51,54 @@ const LARAVEL_BASE =
   process.env.API_BASE_URL ||
   'http://localhost:8000';
 
+// ============================================
+// Sprint 8.7 (P0-5) — Upload validation constants
+// ============================================
+
+/** İzin verilen MIME tipleri (alış faturaları / dekont görselleri). */
+const ALLOWED_RECEIPT_MIME = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+] as const;
+
+/** Maksimum dosya boyutu: 10 MB. */
+const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
+
+/**
+ * İlk savunma hattı (P0-5) — client-side MIME + boyut kontrolü.
+ * Server-side doğrulama için `app/api/uploads/receipts/route.ts` (P0-3
+ * kapsamı) tekrar kontrol eder; bu fonksiyon UX için hızlı fail sağlar.
+ */
+function validateReceiptFiles(files: File[]): void {
+  for (const file of files) {
+    if (
+      !ALLOWED_RECEIPT_MIME.includes(
+        file.type as (typeof ALLOWED_RECEIPT_MIME)[number],
+      )
+    ) {
+      throw new Error(
+        `Geçersiz dosya tipi: ${file.type || 'bilinmiyor'} (${file.name}). İzin verilenler: JPEG, PNG, WebP, GIF, PDF.`,
+      );
+    }
+    if (file.size > MAX_RECEIPT_SIZE) {
+      throw new Error(
+        `Dosya çok büyük: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB — max 10 MB).`,
+      );
+    }
+  }
+}
+
 /** Multipart upload — `api` helper'ı FormData destekler ama explicit header set gerekir. */
 async function uploadReceipts(
   files: File[],
   accessToken: string | undefined,
 ): Promise<{ data: { items: ReceiptItem[] } }> {
+  // P0-5 — istemci tarafı hızlı doğrulama (server yine kontrol eder).
+  validateReceiptFiles(files);
+
   const formData = new FormData();
   for (const file of files) {
     formData.append('file[]', file);
@@ -177,8 +220,7 @@ export function useCreateFirm(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   return useMutation<{ data: Firm }, Error, Record<string, unknown>>({
-    mutationFn: (body) =>
-      api.post<{ data: Firm }>(`/firms`, body),
+    mutationFn: (body) => api.post<{ data: Firm }>(`/firms`, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['firms'] });
       void queryClient.invalidateQueries({ queryKey: ['project-firms'] });
@@ -231,8 +273,7 @@ export function useCreatePersonnel(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   return useMutation<{ data: Personnel }, Error, Record<string, unknown>>({
-    mutationFn: (body) =>
-      api.post<{ data: Personnel }>(`/personnel`, body),
+    mutationFn: (body) => api.post<{ data: Personnel }>(`/personnel`, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['personnel'] });
       void queryClient.invalidateQueries({ queryKey: ['project-personnel'] });
@@ -294,7 +335,11 @@ export function useUploadReceipts(): UseMutationResult<
     session && 'accessToken' in session.user
       ? (session.user as unknown as { accessToken?: string }).accessToken
       : undefined;
-  return useMutation<{ data: { items: ReceiptItem[] } }, Error, { files: File[] }>({
+  return useMutation<
+    { data: { items: ReceiptItem[] } },
+    Error,
+    { files: File[] }
+  >({
     mutationFn: ({ files }) => uploadReceipts(files, accessToken),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['receipts', 'list'] });
@@ -315,7 +360,9 @@ export function useDashboardStats(): UseQueryResult<
   return useQuery<DashboardStatsResponse, Error>({
     queryKey: ['dashboard', 'stats'],
     queryFn: () =>
-      api.get<DashboardStatsResponse>('/dashboard/stats') as Promise<DashboardStatsResponse>,
+      api.get<DashboardStatsResponse>(
+        '/dashboard/stats',
+      ) as Promise<DashboardStatsResponse>,
   });
 }
 
@@ -421,10 +468,9 @@ export function useProjectContracts(
   return useQuery<ProjectContractsResponse, Error>({
     queryKey: ['project-contracts', projectId, params],
     queryFn: () =>
-      api.get<ProjectContractsResponse>(
-        `/projects/${projectId}/contracts`,
-        { params: { per_page: 25, ...params } },
-      ) as Promise<ProjectContractsResponse>,
+      api.get<ProjectContractsResponse>(`/projects/${projectId}/contracts`, {
+        params: { per_page: 25, ...params },
+      }) as Promise<ProjectContractsResponse>,
     enabled: Boolean(projectId),
   });
 }
@@ -464,10 +510,9 @@ export function useProjectMaterials(
   return useQuery<ProjectMaterialsResponse, Error>({
     queryKey: ['project-materials', projectId, params],
     queryFn: () =>
-      api.get<ProjectMaterialsResponse>(
-        `/projects/${projectId}/materials`,
-        { params: { per_page: 25, ...params } },
-      ) as Promise<ProjectMaterialsResponse>,
+      api.get<ProjectMaterialsResponse>(`/projects/${projectId}/materials`, {
+        params: { per_page: 25, ...params },
+      }) as Promise<ProjectMaterialsResponse>,
     enabled: Boolean(projectId),
   });
 }
@@ -758,7 +803,9 @@ export function useUpdateTransaction(): UseMutationResult<
       api.patch<{ data: Transaction }>(`/transactions/${id}`, data),
     onSuccess: (_resp, { id }) => {
       void queryClient.invalidateQueries({ queryKey: ['transaction', id] });
-      void queryClient.invalidateQueries({ queryKey: ['project-transactions'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['project-transactions'],
+      });
       void queryClient.invalidateQueries({ queryKey: ['project-collections'] });
     },
   });
@@ -843,7 +890,9 @@ export function useUpdateEntitlement(): UseMutationResult<
       api.patch<{ data: Entitlement }>(`/entitlements/${id}`, data),
     onSuccess: (_resp, { id }) => {
       void queryClient.invalidateQueries({ queryKey: ['entitlement', id] });
-      void queryClient.invalidateQueries({ queryKey: ['project-entitlements'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['project-entitlements'],
+      });
     },
   });
 }
@@ -926,7 +975,9 @@ export function useUpdatePersonnel(): UseMutationResult<
     mutationFn: ({ id, data }) =>
       api.patch<{ data: Personnel }>(`/personnel/${id}`, data),
     onSuccess: (_resp, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['personnel-detail', id] });
+      void queryClient.invalidateQueries({
+        queryKey: ['personnel-detail', id],
+      });
       void queryClient.invalidateQueries({ queryKey: ['personnel'] });
       void queryClient.invalidateQueries({ queryKey: ['project-personnel'] });
     },
@@ -978,9 +1029,7 @@ export function useBulkDeleteTransactions(): UseMutationResult<
 > {
   return useMutation<string[], Error, string[]>({
     mutationFn: async (ids) => {
-      await Promise.all(
-        ids.map((id) => api.delete(`/transactions/${id}`)),
-      );
+      await Promise.all(ids.map((id) => api.delete(`/transactions/${id}`)));
       return ids;
     },
   });
@@ -1009,7 +1058,9 @@ export function useUpdatePersonnelAssignment(): UseMutationResult<
     mutationFn: ({ id, data }) =>
       api.patch<{ data: Personnel }>(`/personnel/${id}`, data),
     onSuccess: (_resp, { id }) => {
-      void queryClient.invalidateQueries({ queryKey: ['personnel-detail', id] });
+      void queryClient.invalidateQueries({
+        queryKey: ['personnel-detail', id],
+      });
       void queryClient.invalidateQueries({ queryKey: ['personnel'] });
       void queryClient.invalidateQueries({ queryKey: ['project-personnel'] });
     },
