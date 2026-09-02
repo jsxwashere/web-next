@@ -28,10 +28,12 @@
  * relative path prefix'leme için hâlâ kullanılıyor.
  */
 
-const LARAVEL_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
-  'http://localhost:8000';
+// Sprint 8.7+ — BFF (Backend-for-Frontend) mimarisi. Client tüm
+// isteklerini Next.js API proxy katmanına gönderir; Laravel'a erişim
+// yalnızca server-side route handler'lardan yapılır.
+import { NEXT_API_BASE } from './config';
+
+const LARAVEL_BASE = NEXT_API_BASE;
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 

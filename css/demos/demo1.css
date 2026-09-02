@@ -9,10 +9,25 @@
     --header-height: 70px;
   }
 
+  /* Sprint 9 — ŞantiyePro shell two-layer sidebar (primary 60 + secondary 240). */
+  .shell {
+    --sidebar-transition-duration: 0.3s;
+    --sidebar-transition-timing: ease;
+    --sidebar-width: 300px;
+    --sidebar-width-collapse: 68px;
+    --sidebar-default-width: 300px;
+    --sidebar-primary-width: 60px;
+    --header-height: 60px;
+  }
+
   @media (max-width: theme(--breakpoint-lg)) {
     .demo1 {
       --sidebar-width: 280px;
       --header-height: 60px;
+    }
+
+    .shell {
+      --sidebar-width: 300px;
     }
   }
 
@@ -26,6 +41,24 @@
   }
 
   .demo1.header-fixed .wrapper {
+    padding-top: var(--header-height);
+  }
+
+  /* Sprint 9 — ŞantiyePro shell base styles. Header is fixed and full-width;
+     sidebar is fixed on the start edge. Wrapper handles both paddings. */
+  .shell .header {
+    height: var(--header-height);
+  }
+
+  .shell .sidebar {
+    width: var(--sidebar-width);
+  }
+
+  .shell.sidebar-fixed .wrapper {
+    padding-inline-start: var(--sidebar-width) !important;
+  }
+
+  .shell.sidebar-fixed.header-fixed .wrapper {
     padding-top: var(--header-height);
   }
 
@@ -129,6 +162,68 @@
       top: 0.25rem;
       transform: translateX(100%);
     }
+
+    /* Sprint 9 — ŞantiyePro shell desktop sidebar behavior. */
+    .shell .sidebar {
+      width: var(--sidebar-width);
+      transition: width var(--sidebar-transition-duration)
+        var(--sidebar-transition-timing);
+    }
+
+    .shell .sidebar .sidebar-header {
+      height: var(--header-height);
+    }
+
+    .shell.sidebar-fixed .header {
+      inset-inline-start: var(--sidebar-width) !important;
+    }
+
+    .shell.sidebar-collapse {
+      --sidebar-width: var(--sidebar-width-collapse);
+    }
+
+    .shell.sidebar-collapse .sidebar {
+      transition: width var(--sidebar-transition-duration)
+        var(--sidebar-transition-timing);
+    }
+
+    .shell.sidebar-collapse
+      .sidebar:not(:hover)
+      [data-slot='accordion-menu-title'],
+    .shell.sidebar-collapse .sidebar:not(:hover) [data-slot='badge'],
+    .shell.sidebar-collapse
+      .sidebar:not(:hover)
+      [data-slot='accordion-menu-sub-indicator'] {
+      display: none !important;
+      transition: none !important;
+      animation: none !important;
+    }
+
+    .shell.sidebar-collapse
+      .sidebar:not(:hover)
+      [data-slot='accordion-menu-sub-content'] {
+      visibility: hidden;
+      position: absolute;
+      height: 0;
+      width: 0;
+    }
+
+    .shell.sidebar-collapse
+      .sidebar:not(:hover)
+      [data-slot='accordion-menu-label'] {
+      visibility: hidden;
+      position: relative;
+    }
+  }
+
+  .shell.layout-initialized .wrapper {
+    transition: padding-inline-start var(--sidebar-transition-duration)
+      var(--sidebar-transition-timing);
+  }
+
+  .shell.layout-initialized .header {
+    transition: inset-inline-start var(--sidebar-transition-duration)
+      var(--sidebar-transition-timing);
   }
 
   .demo1.layout-initialized .wrapper {

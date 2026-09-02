@@ -21,6 +21,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { SidebarHeader } from './sidebar-header';
 
+/**
+ * Sprint 9 — ŞantiyePro shell sidebar (Metronic demo1 görsel standardı).
+ *
+ * Genişlik `--sidebar-width` CSS değişkeninden gelir (300px expanded,
+ * 68px collapsed). Wrapper `padding-inline-start` aynı değişkene bağlı —
+ * böylece sidebar ile içerik kartları her zaman hizalı kalır.
+ *
+ * `sidebar-collapse` body class'ı `--sidebar-width`'i daraltır.
+ */
 export function ShellSidebar() {
   const { settings, storeOption } = useSettings();
   const pathname = usePathname();
@@ -119,20 +128,16 @@ export function ShellSidebar() {
   };
 
   return (
-    <div
+    <aside
+      data-tour="sidebar"
       className={cn(
-        'sidebar bg-background lg:border-e lg:border-border lg:fixed lg:top-0 lg:bottom-0 lg:z-15 lg:flex flex-col items-stretch shrink-0 transition-[width] duration-200',
-        collapsed ? 'lg:w-[68px]' : 'lg:w-(--sidebar-default-width)',
+        'sidebar bg-background lg:border-e lg:border-border lg:fixed lg:top-0 lg:bottom-0 lg:z-20 lg:flex flex-col items-stretch shrink-0',
         settings.layouts.shell.sidebarTheme === 'dark' && 'dark',
       )}
     >
       <SidebarHeader />
       <div className="overflow-hidden">
-        <div
-          className={cn(
-            collapsed ? 'w-[68px]' : 'w-(--sidebar-default-width)',
-          )}
-        >
+        <div className="w-(--sidebar-default-width)">
           <div className="kt-scrollable-y-hover flex grow shrink-0 py-5 px-5 lg:max-h-[calc(100vh-5.5rem)]">
             <AccordionMenu
               selectedValue={pathname}
@@ -146,7 +151,8 @@ export function ShellSidebar() {
           </div>
         </div>
       </div>
-      {/* Quick toggle (mirror of SidebarHeader button) — also surfaced here for accessibility */}
+      {/* Mirror collapse toggle (sidebar-edge button). Primary trigger is
+          inside SidebarHeader. */}
       <Button
         size="sm"
         mode="icon"
@@ -161,6 +167,6 @@ export function ShellSidebar() {
           className={cn('size-4!', collapsed && 'ltr:rotate-180 rtl:rotate-180')}
         />
       </Button>
-    </div>
+    </aside>
   );
 }

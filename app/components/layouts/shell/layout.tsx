@@ -12,23 +12,27 @@ export interface ShellLayoutProps {
 }
 
 /**
- * Sprint 2 — ŞantiyePro ana layout.
+ * Sprint 9 — ŞantiyePro shell layout (Metronic demo1 standardı).
  *
- * Yapı:
- *   ┌─────────┬──────────────────────────────┐
- *   │ Sidebar │ Topbar (sticky)              │
- *   │ (tek)   ├──────────────────────────────┤
- *   │         │                              │
- *   │         │  <main> children             │
- *   │         │                              │
- *   │         ├──────────────────────────────┤
- *   │         │ Footer                       │
- *   └─────────┴──────────────────────────────┘
+ * Yapı (desktop):
+ *   ┌──────────┬────────────────────────────────────┐
+ *   │ Sidebar  │ Header (top, fixed)                 │
+ *   │ (sabit)  ├────────────────────────────────────┤
+ *   │         │ Wrapper (padding-inline-start =     │
+ *   │  primary│   sidebar genişliği — CSS'ten gelir) │
+ *   │ + 2nd   │                                    │
+ *   │         │  <main> children (kartlar)         │
+ *   │         │                                    │
+ *   │         ├────────────────────────────────────┤
+ *   │         │ Footer                             │
+ *   └──────────┴────────────────────────────────────┘
  *
- * - Sidebar tek katmanlı — proje-içi modüller `<ProjectTabs />` ile gösterilir.
- * - Topbar sticky, scroll'da border ekler.
- * - `settings.layouts.shell.*` state kullanır (SettingsProvider).
- * - Body class'ları: `shell sidebar-fixed header-fixed`.
+ * Sidebar ve wrapper hizalaması `css/demos/demo1.css` içindeki `.shell.*`
+ * kurallarıyla yönetilir — `settings.layouts.shell.sidebarCollapse` body
+ * class'ına yansıtılır ve CSS `--sidebar-width` değişkenini değiştirir.
+ *
+ * Body class'ları: `shell sidebar-fixed header-fixed` (+ opsiyonel
+ * `sidebar-collapse`, `layout-initialized`).
  */
 export function ShellLayout({ children }: ShellLayoutProps) {
   const isMobile = useIsMobile();
@@ -73,16 +77,7 @@ export function ShellLayout({ children }: ShellLayoutProps) {
     <>
       {!isMobile && <ShellSidebar />}
 
-      <div
-        className="wrapper flex grow flex-col"
-        style={{
-          paddingLeft: isMobile
-            ? 0
-            : settings.layouts.shell.sidebarCollapse
-              ? 68
-              : undefined, // default sidebar width comes from CSS var
-        }}
-      >
+      <div className="wrapper flex grow flex-col">
         <ShellTopbar />
 
         <main className="grow pt-[60px]" role="content">

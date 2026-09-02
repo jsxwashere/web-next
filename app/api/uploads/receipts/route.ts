@@ -1,34 +1,26 @@
 /**
  * `app/api/uploads/receipts/route.ts`
  *
- * Sprint 8.7 (P0-3 — server-side upload validation)
+ * Sprint 8.7+ — Dekont upload proxy'su (BFF).
  *
- * İstemci tarafı `useUploadReceipts` hook'u MIME + boyut doğrulaması yapar
- * (`hooks/use-santiyepro-api.ts`); bu route ise aynı kontrolleri SERVER
- * tarafında tekrar uygular. Böylece:
- *   - DevTools / curl ile gelen istekler de reddedilir
- *   - Laravel backend'in önünde bir BFF (Backend-for-Frontend) katmanı
- *     sağlanır
- *   - Yetkilendirme (NextAuth session) burada doğrulanır, backend'e
- *     yalnız imzalı token geçer
+ * Akış:
+ *   1. İstemci FormData (multipart) ile POST atar
+ *   2. Next.js route MIME + boyut + dosya sayısı validate eder
+ *      (P0-5 savunma hattı; client tarafı da validate eder)
+ *   3. `auth()` ile NextAuth session doğrulanır; accessToken cookie'den okunur
+ *   4. Multipart payload Laravel `/api/receipts/` uç noktasına
+ *      Bearer header ile forward edilir
+ *   5. Laravel JSON yanıtı aynen geri döner
  *
- * Bu endpoint opsiyoneldir — isteyen client'lar doğrudan Laravel
- * `/api/receipts/` üzerinden de upload edebilir. Etkinleştirmek için
- * `hooks/use-santiyepro-api.ts`'deki `uploadReceipts` fonksiyonunun
- * `LARAVEL_BASE` yerine `/api/uploads/receipts` hedeflemesi gerekir.
- *
- * Validate kural seti (client ile birebir aynı):
- *   - MIME allow-list: image/jpeg, image/png, image/webp, image/gif,
- *     application/pdf
- *   - Maks. dosya boyutu: 10 MB / dosya
- *   - Maks. dosya sayısı: 20 (UX'i korumak için)
- *
- * Sprint 8.7+ takip notu: Tüm Laravel API'leri bu pattern'e
- * taşınabilir (`/api/projects`, `/api/transactions`, …); her biri
- * NextAuth session doğrulaması + tip kontrolü içerir.
+ * Avantajlar:
+ *   - Browser same-origin → CORS yok
+ *   - AccessToken HttpOnly cookie'de kalır, XSS yüzeyi daralır
+ *   - Laravel'a yalnız imzalı Bearer ile ulaşılır
  */
 
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { LARAVEL_BASE } from '@/lib/api/config';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs'; // Buffer-based multipart parsing için
@@ -54,14 +46,11 @@ function fail(status: number, error: string): ValidationFailure {
   return { ok: false, status, error };
 }
 
-/**
- * Multipart payload'dan dosyaları çıkarır ve validate eder.
- * `request.formData()` Next.js tarafından sağlanır; biz yalnız
- * doğrulama + ileri proxy hazırlığı yaparız.
- */
 async function extractAndValidate(
   request: Request,
-): Promise<{ ok: true; files: File[] } | ValidationFailure> {
+): Promise<
+  { ok: true; files: File[]; formData: FormData } | ValidationFailure
+> {
   let form: FormData;
   try {
     form = await request.formData();
@@ -69,7 +58,6 @@ async function extractAndValidate(
     return fail(400, 'Geçersiz multipart payload.');
   }
 
-  // FormData üzerindeki tüm File entry'lerini topla
   const files: File[] = [];
   const entries = Array.from(form.entries());
   for (let i = 0; i < entries.length; i++) {
@@ -108,15 +96,9 @@ async function extractAndValidate(
     }
   }
 
-  return { ok: true, files };
+  return { ok: true, files, formData: form };
 }
 
-/**
- * POST /api/uploads/receipts
- *
- * Şu an validate-only stub: dosyalar doğrulanır, başarılıysa 202 +
- * özet döner. Laravel'a proxy ileride eklenecek (Sprint 8.7+ takip notu).
- */
 export async function POST(request: Request): Promise<NextResponse> {
   // 1) Content-Type guard — multipart değilse 415
   const contentType = request.headers.get('content-type') ?? '';
@@ -136,21 +118,39 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  // 3) Sprint 8.7+ — Laravel proxy + NextAuth token burada forward edilecek.
-  // Şimdilik validate-only ack dönüyoruz; client tarafı zaten doğrudan
-  // Laravel'a yüklüyor (`uploadReceipts`).
-  const summary = result.files.map((f) => ({
-    name: f.name,
-    type: f.type,
-    size: f.size,
-  }));
+  // 3) Auth — NextAuth session'dan accessToken oku
+  const session = await auth();
+  if (!session?.user?.accessToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-  return NextResponse.json(
-    {
-      accepted: result.files.length,
-      files: summary,
-      note: 'Validate-only ack — Sprint 8.7+’da Laravel proxy eklenecek.',
-    },
-    { status: 202 },
-  );
+  // 4) Multipart payload'ı Laravel'a forward et
+  // Body zaten validate sırasında tüketildi; `result.formData` üzerinden
+  // yeniden kullanıyoruz. Dosya stream'leri hâlâ geçerli.
+  let response: Response;
+  try {
+    response = await fetch(`${LARAVEL_BASE}/api/receipts/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.user.accessToken}`,
+        Accept: 'application/json',
+        // Content-Type set edilmez → fetch multipart boundary ekler
+      },
+      body: result.formData,
+      cache: 'no-store',
+    });
+  } catch {
+    return NextResponse.json({ error: 'Upstream error' }, { status: 502 });
+  }
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    return NextResponse.json(data, { status: response.status });
+  } catch {
+    return new NextResponse(text, {
+      status: response.status,
+      headers: { 'content-type': contentType },
+    });
+  }
 }

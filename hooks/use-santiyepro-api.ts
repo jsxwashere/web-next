@@ -23,6 +23,7 @@ import {
 } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { api, ApiError } from '@/lib/api/client';
+import { NEXT_API_BASE } from '@/lib/api/config';
 import type {
   ApiResponse,
   Collection,
@@ -46,10 +47,9 @@ import type {
   Transaction,
 } from '@/lib/api/types';
 
-const LARAVEL_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
-  'http://localhost:8000';
+// Sprint 8.7+ — BFF mimarisi; upload'lar Next.js proxy üzerinden.
+// Authorization header'ı artık proxy server-side ekler; client'a gerekmez.
+const RECEIPTS_PROXY = `${NEXT_API_BASE}/uploads/receipts`;
 
 // ============================================
 // Sprint 8.7 (P0-5) — Upload validation constants
@@ -91,10 +91,10 @@ function validateReceiptFiles(files: File[]): void {
   }
 }
 
-/** Multipart upload — `api` helper'ı FormData destekler ama explicit header set gerekir. */
+/** Multipart upload — Next.js proxy server-side Authorization ekler. */
 async function uploadReceipts(
   files: File[],
-  accessToken: string | undefined,
+  _accessToken: string | undefined,
 ): Promise<{ data: { items: ReceiptItem[] } }> {
   // P0-5 — istemci tarafı hızlı doğrulama (server yine kontrol eder).
   validateReceiptFiles(files);
@@ -104,17 +104,13 @@ async function uploadReceipts(
     formData.append('file[]', file);
   }
 
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-  };
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const res = await fetch(`${LARAVEL_BASE}/api/receipts/`, {
+  // Authorization server-side `auth()` ile eklenir; client'ta gerekmez.
+  const res = await fetch(RECEIPTS_PROXY, {
     method: 'POST',
     body: formData,
-    headers,
+    headers: {
+      Accept: 'application/json',
+    },
   });
 
   if (!res.ok) {

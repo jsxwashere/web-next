@@ -1,15 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { HardHat } from 'lucide-react';
+import { ChevronFirst, HardHat } from 'lucide-react';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@/providers/settings-provider';
 import { Button } from '@/components/ui/button';
 
 /**
- * Sprint 2 — ŞantiyePro shell sidebar header.
- * Logo + (opsiyonel) collapse toggle.
+ * Sprint 9 — ŞantiyePro shell sidebar header.
+ * Logo + collapse toggle (Metronic demo1 standardı).
+ *
+ * Collapsed durumda sadece mini-logo ikonu gösterilir;
+ * expanded durumda mini-logo + "ŞantiyePro" yazısı görünür.
  */
 export function SidebarHeader() {
   const { settings, storeOption } = useSettings();
@@ -18,37 +21,25 @@ export function SidebarHeader() {
   return (
     <div className="sidebar-header hidden lg:flex items-center relative justify-between px-3 lg:px-6 shrink-0 h-[60px]">
       <Link href="/dashboard" className="flex items-center gap-2">
-        {/* Always render mini-logo in collapsed state; full logo when expanded */}
-        <div className="dark:hidden flex items-center gap-2">
-          {collapsed ? (
-            <HardHat className="size-6 text-primary" />
-          ) : (
+        {collapsed ? (
+          <HardHat className="size-6 text-primary" aria-hidden="true" />
+        ) : (
+          <>
             <img
               src={toAbsoluteUrl('/media/app/mini-logo.svg')}
-              className="h-[22px] max-w-none"
+              className="h-[22px] max-w-none dark:hidden"
               alt="ŞantiyePro"
             />
-          )}
-          {!collapsed && (
-            <span className="font-semibold text-sm">ŞantiyePro</span>
-          )}
-        </div>
-        <div className="hidden dark:flex dark:items-center dark:gap-2">
-          {collapsed ? (
-            <HardHat className="size-6 text-primary" />
-          ) : (
             <img
               src={toAbsoluteUrl('/media/app/mini-logo.svg')}
-              className="h-[22px] max-w-none"
+              className="h-[22px] max-w-none hidden dark:inline-block"
               alt="ŞantiyePro"
             />
-          )}
-          {!collapsed && (
             <span className="font-semibold text-sm text-foreground">
               ŞantiyePro
             </span>
-          )}
-        </div>
+          </>
+        )}
       </Link>
       <Button
         onClick={() =>
@@ -63,7 +54,7 @@ export function SidebarHeader() {
         )}
         aria-label="Yan menüyü aç/kapat"
       >
-        <span aria-hidden="true">{'<'}</span>
+        <ChevronFirst className="size-4!" aria-hidden="true" />
       </Button>
     </div>
   );
