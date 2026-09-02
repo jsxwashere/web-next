@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { FileImage, Plus } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
@@ -18,6 +18,7 @@ import {
 import type { Drawing } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatDateTr } from '@/lib/helpers';
+import { NewDrawingSheet } from './_components/new-drawing-sheet';
 
 /**
  * Sprint 5 — Çizimler (project-scoped).
@@ -42,6 +43,7 @@ function formatFileSize(bytes?: number | null): string {
 export function DrawingsContent({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const drawingsQuery = useProjectDrawings(projectId);
+  const [openNew, setOpenNew] = useState(false);
 
   const drawings = useMemo<Drawing[]>(
     () => drawingsQuery.data?.data ?? [],
@@ -80,7 +82,7 @@ export function DrawingsContent({ projectId }: { projectId: string }) {
               {t('pages.projectTabs.cizimler.subtitle')}
             </p>
           </div>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setOpenNew(true)}>
             <Plus className="me-1 size-4" />
             {t('pages.projectTabs.cizimler.addDrawing')}
           </Button>
@@ -127,6 +129,12 @@ export function DrawingsContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewDrawingSheet
+        open={openNew}
+        onOpenChange={setOpenNew}
+        projectId={projectId}
+      />
     </Container>
   );
 }

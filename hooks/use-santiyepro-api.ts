@@ -105,6 +105,30 @@ export function useProjects(
   });
 }
 
+/**
+ * Yeni proje oluşturma mutation'ı.
+ * Sprint 7 — wizard için eklendi.
+ *
+ * Payload: ŞantiyePro `171gpwffoviaf.js` :1209-1231 ile uyumlu
+ * (bkz. `.tmp-crawl/sp-deep/projeler-sihirbazi.md` [api]).
+ *
+ * Başarıda ilgili sorgular invalidate edilir; çağıran taraf
+ * `onSuccess` callback'i ile yönlendirme yapabilir.
+ */
+export function useCreateProject(): UseMutationResult<
+  { data: Project },
+  Error,
+  Record<string, unknown>
+> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: Project }, Error, Record<string, unknown>>({
+    mutationFn: (body) => api.post<{ data: Project }>('/projects', body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+}
+
 // ============================================
 // FİRMALAR
 // ============================================
@@ -120,6 +144,26 @@ export function useFirms(
       api.get<FirmsResponse>('/firms', {
         params: { per_page: 100, ...params },
       }) as Promise<FirmsResponse>,
+  });
+}
+
+/**
+ * Yeni firma oluşturma mutation'ı.
+ * Sprint 6.5 — new-firm-sheet için eklendi.
+ */
+export function useCreateFirm(): UseMutationResult<
+  { data: Firm },
+  Error,
+  Record<string, unknown>
+> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: Firm }, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post<{ data: Firm }>(`/firms`, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['firms'] });
+      void queryClient.invalidateQueries({ queryKey: ['project-firms'] });
+    },
   });
 }
 
@@ -153,6 +197,26 @@ export function useTogglePersonnelStatus(): UseMutationResult<
       api.put<Personnel>(`/personnel/${id}`, { status }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['personnel'] });
+    },
+  });
+}
+
+/**
+ * Yeni personel oluşturma mutation'ı.
+ * Sprint 6.5 — new-personnel-sheet için eklendi.
+ */
+export function useCreatePersonnel(): UseMutationResult<
+  { data: Personnel },
+  Error,
+  Record<string, unknown>
+> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: Personnel }, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post<{ data: Personnel }>(`/personnel`, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['personnel'] });
+      void queryClient.invalidateQueries({ queryKey: ['project-personnel'] });
     },
   });
 }
@@ -346,6 +410,30 @@ export function useProjectContracts(
   });
 }
 
+/**
+ * Yeni sözleşme oluşturma mutation'ı.
+ * Sprint 6.5 — new-contract-sheet için eklendi.
+ * Payload içinde `project_id` otomatik enjekte edilir.
+ */
+export function useCreateContract(
+  projectId: string,
+): UseMutationResult<{ data: Contract }, Error, Record<string, unknown>> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: Contract }, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post<{ data: Contract }>(`/contracts`, {
+        ...body,
+        project_id: projectId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['project-contracts', projectId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+}
+
 // --- MALZEMELER (Materials)
 
 type ProjectMaterialsResponse = PaginatedResponse<Material>;
@@ -365,6 +453,29 @@ export function useProjectMaterials(
   });
 }
 
+/**
+ * Yeni malzeme oluşturma mutation'ı.
+ * Sprint 6.5 — new-material-sheet için eklendi.
+ */
+export function useCreateMaterial(
+  projectId: string,
+): UseMutationResult<{ data: Material }, Error, Record<string, unknown>> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: Material }, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post<{ data: Material }>(`/materials`, {
+        ...body,
+        project_id: projectId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['project-materials', projectId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+}
+
 // --- HAKEDİŞLER (Entitlements)
 
 export function useProjectEntitlements(
@@ -379,6 +490,29 @@ export function useProjectEntitlements(
         { params: { per_page: 25, ...params } },
       ) as Promise<ProjectEntitlementsResponse>,
     enabled: Boolean(projectId),
+  });
+}
+
+/**
+ * Yeni hakediş oluşturma mutation'ı.
+ * Sprint 6.5 — new-entitlement-sheet için eklendi.
+ */
+export function useCreateEntitlement(
+  projectId: string,
+): UseMutationResult<{ data: Entitlement }, Error, Record<string, unknown>> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: Entitlement }, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post<{ data: Entitlement }>(`/entitlements`, {
+        ...body,
+        project_id: projectId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['project-entitlements', projectId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
   });
 }
 
@@ -432,6 +566,28 @@ export function useProjectDrawings(
         params: { per_page: 50, ...params },
       }) as Promise<ProjectDrawingsResponse>,
     enabled: Boolean(projectId),
+  });
+}
+
+/**
+ * Yeni çizim oluşturma mutation'ı (multipart upload).
+ * Sprint 6.5 — new-drawing-sheet için eklendi.
+ */
+export function useCreateDrawing(
+  projectId: string,
+): UseMutationResult<{ data: Drawing }, Error, Record<string, unknown>> {
+  const queryClient = useQueryClient();
+  return useMutation<{ data: Drawing }, Error, Record<string, unknown>>({
+    mutationFn: (body) =>
+      api.post<{ data: Drawing }>(`/drawings`, {
+        ...body,
+        project_id: projectId,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['project-drawings', projectId],
+      });
+    },
   });
 }
 

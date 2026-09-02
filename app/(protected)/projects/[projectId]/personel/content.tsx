@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { DollarSign, Search, Users, X as XIcon } from 'lucide-react';
+import { DollarSign, Plus, Search, Users, X as XIcon } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Container } from '@/components/common/container';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +19,7 @@ import {
 import type { Personnel, PersonnelAssignment } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, getInitials, storageUrl } from '@/lib/helpers';
+import { NewPersonnelSheet } from './_components/new-personnel-sheet';
 
 /**
  * Sprint 5 — Personel (project-scoped).
@@ -78,6 +80,7 @@ export function PersonelContent({ projectId }: { projectId: string }) {
   );
 
   const [search, setSearch] = useState('');
+  const [openNew, setOpenNew] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search) return personnel;
@@ -131,13 +134,19 @@ export function PersonelContent({ projectId }: { projectId: string }) {
     <Container>
       <div className="flex flex-col gap-6 py-6">
         {/* Header */}
-        <div>
-          <h1 className="text-base font-medium">
-            {t('pages.projectTabs.personel.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {t('pages.projectTabs.personel.subtitle')}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-medium">
+              {t('pages.projectTabs.personel.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {t('pages.projectTabs.personel.subtitle')}
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setOpenNew(true)}>
+            <Plus className="me-1 size-4" />
+            {t('pages.projectTabs.personel.addPersonnel')}
+          </Button>
         </div>
 
         {/* Stat cards */}
@@ -276,6 +285,8 @@ export function PersonelContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewPersonnelSheet open={openNew} onOpenChange={setOpenNew} />
     </Container>
   );
 }

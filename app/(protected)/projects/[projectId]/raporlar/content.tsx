@@ -29,6 +29,7 @@ import {
 import type { SiteReport } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatDateTr } from '@/lib/helpers';
+import { NewSiteReportSheet } from './_components/new-site-report-sheet';
 
 /**
  * Sprint 5 — Saha Raporları (project-scoped).
@@ -57,6 +58,7 @@ export function RaporlarContent({ projectId }: { projectId: string }) {
   );
 
   const [search, setSearch] = useState('');
+  const [openNew, setOpenNew] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search) return reports;
@@ -109,7 +111,7 @@ export function RaporlarContent({ projectId }: { projectId: string }) {
               {t('pages.projectTabs.raporlar.subtitle')}
             </p>
           </div>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setOpenNew(true)}>
             <Plus className="me-1 size-4" />
             {t('pages.projectTabs.raporlar.addReport')}
           </Button>
@@ -279,6 +281,12 @@ export function RaporlarContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewSiteReportSheet
+        open={openNew}
+        onOpenChange={setOpenNew}
+        projectId={projectId}
+      />
     </Container>
   );
 }

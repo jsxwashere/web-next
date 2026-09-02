@@ -5,6 +5,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   CreditCard,
+  Plus,
   Search,
   X as XIcon,
   AlertTriangle,
@@ -22,6 +23,7 @@ import type { Transaction } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 import { TransactionKindLabels } from '@/lib/enums';
+import { NewPaymentSheet } from './_components/new-payment-sheet';
 
 /**
  * Sprint 5 — Ödemeler (birleşik gelir/gider tablosu).
@@ -62,6 +64,7 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [openNew, setOpenNew] = useState(false);
 
   const transactionsQuery = useProjectTransactions(projectId, {
     search: search || undefined,
@@ -111,8 +114,8 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
               {t('pages.projectTabs.odemeler.subtitle')}
             </p>
           </div>
-          <Button size="sm">
-            <CreditCard className="me-1 size-4" />
+          <Button size="sm" onClick={() => setOpenNew(true)}>
+            <Plus className="me-1 size-4" />
             {t('pages.projectTabs.odemeler.addTransaction')}
           </Button>
         </div>
@@ -344,6 +347,12 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewPaymentSheet
+        open={openNew}
+        onOpenChange={setOpenNew}
+        projectId={projectId}
+      />
     </Container>
   );
 }

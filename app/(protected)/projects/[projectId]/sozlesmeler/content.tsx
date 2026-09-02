@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProjectContracts } from '@/hooks/use-santiyepro-api';
+import { NewContractSheet } from './_components/new-contract-sheet';
 import {
   ContractStatusLabels,
   ContractStatusVariants,
@@ -45,6 +46,7 @@ export function SozlesmelerContent({ projectId }: { projectId: string }) {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | ContractTypeKey>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | ContractStatusKey>('all');
+  const [openNew, setOpenNew] = useState(false);
 
   const contractsQuery = useProjectContracts(projectId, {
     search: search || undefined,
@@ -95,7 +97,7 @@ export function SozlesmelerContent({ projectId }: { projectId: string }) {
               {t('pages.projectTabs.sozlesmeler.subtitle')}
             </p>
           </div>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setOpenNew(true)}>
             <Plus className="me-1 size-4" />
             {t('pages.projectTabs.sozlesmeler.addContract')}
           </Button>
@@ -301,6 +303,12 @@ export function SozlesmelerContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewContractSheet
+        open={openNew}
+        onOpenChange={setOpenNew}
+        projectId={projectId}
+      />
     </Container>
   );
 }

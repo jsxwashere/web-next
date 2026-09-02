@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { BoxIcon, Package, Search, X as XIcon } from 'lucide-react';
+import { BoxIcon, Package, Plus, Search, X as XIcon } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Container } from '@/components/common/container';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +14,7 @@ import { useProjectMaterials } from '@/hooks/use-santiyepro-api';
 import type { Material } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
+import { NewMaterialSheet } from './_components/new-material-sheet';
 
 /**
  * Sprint 5 — Malzeme (project-scoped).
@@ -33,6 +35,7 @@ export function MalzemeContent({ projectId }: { projectId: string }) {
 
   const [search, setSearch] = useState('');
   const [returnsOnly, setReturnsOnly] = useState(false);
+  const [openNew, setOpenNew] = useState(false);
 
   const filtered = useMemo(() => {
     return materials.filter((m) => {
@@ -83,13 +86,19 @@ export function MalzemeContent({ projectId }: { projectId: string }) {
     <Container>
       <div className="flex flex-col gap-6 py-6">
         {/* Header */}
-        <div>
-          <h1 className="text-base font-medium">
-            {t('pages.projectTabs.malzeme.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {t('pages.projectTabs.malzeme.subtitle')}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-medium">
+              {t('pages.projectTabs.malzeme.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {t('pages.projectTabs.malzeme.subtitle')}
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setOpenNew(true)}>
+            <Plus className="me-1 size-4" />
+            {t('pages.projectTabs.malzeme.addMaterial')}
+          </Button>
         </div>
 
         {/* Stat cards */}
@@ -237,6 +246,12 @@ export function MalzemeContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewMaterialSheet
+        open={openNew}
+        onOpenChange={setOpenNew}
+        projectId={projectId}
+      />
     </Container>
   );
 }

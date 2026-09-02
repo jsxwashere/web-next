@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Building2, Mail, Phone, Search, X as XIcon } from 'lucide-react';
+import { Building2, Mail, Phone, Plus, Search, X as XIcon } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Container } from '@/components/common/container';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +18,7 @@ import {
   type FirmType as FirmTypeKey,
 } from '@/lib/enums';
 import type { Firm } from '@/lib/api/types';
+import { NewFirmSheet } from './_components/new-firm-sheet';
 
 /**
  * Sprint 5 — Firmalar (project-scoped).
@@ -49,6 +51,7 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
 
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState<TypeFilter>('all');
+  const [openNew, setOpenNew] = useState(false);
 
   const filtered = useMemo(() => {
     return firms.filter((f) => {
@@ -93,13 +96,19 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
     <Container>
       <div className="flex flex-col gap-6 py-6">
         {/* Header */}
-        <div>
-          <h1 className="text-base font-medium">
-            {t('pages.projectTabs.firmalar.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {t('pages.projectTabs.firmalar.subtitle')}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-medium">
+              {t('pages.projectTabs.firmalar.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {t('pages.projectTabs.firmalar.subtitle')}
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setOpenNew(true)}>
+            <Plus className="me-1 size-4" />
+            {t('pages.projectTabs.firmalar.addFirm')}
+          </Button>
         </div>
 
         {/* Filtre barı */}
@@ -223,6 +232,8 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewFirmSheet open={openNew} onOpenChange={setOpenNew} />
     </Container>
   );
 }

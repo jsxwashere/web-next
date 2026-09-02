@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Banknote, Search, X as XIcon } from 'lucide-react';
+import { Banknote, Plus, Search, X as XIcon } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Container } from '@/components/common/container';
@@ -14,6 +14,7 @@ import { useProjectCollections } from '@/hooks/use-santiyepro-api';
 import type { Collection } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
+import { NewCollectionSheet } from './_components/new-collection-sheet';
 
 /**
  * Sprint 5 — Tahsilatlar content.
@@ -49,6 +50,7 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
   );
 
   const [search, setSearch] = useState('');
+  const [openNew, setOpenNew] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search) return collections;
@@ -103,8 +105,8 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
               {t('pages.projectTabs.tahsilatlar.subtitle')}
             </p>
           </div>
-          <Button size="sm">
-            <Banknote className="me-1 size-4" />
+          <Button size="sm" onClick={() => setOpenNew(true)}>
+            <Plus className="me-1 size-4" />
             {t('pages.projectTabs.tahsilatlar.addCollection')}
           </Button>
         </div>
@@ -221,6 +223,12 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+
+      <NewCollectionSheet
+        open={openNew}
+        onOpenChange={setOpenNew}
+        projectId={projectId}
+      />
     </Container>
   );
 }

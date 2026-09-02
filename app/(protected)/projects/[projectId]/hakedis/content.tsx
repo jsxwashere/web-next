@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ClipboardList, Download, Search, X as XIcon } from 'lucide-react';
+import { ClipboardList, Download, Plus, Search, X as XIcon } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Container } from '@/components/common/container';
@@ -20,6 +20,7 @@ import {
 import type { Entitlement } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
+import { NewEntitlementSheet } from './_components/new-entitlement-sheet';
 
 /**
  * Sprint 5 — Hakediş (project-scoped).
@@ -41,6 +42,7 @@ export function HakedisContent({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | EntitlementStatusKey>('all');
+  const [openNew, setOpenNew] = useState(false);
 
   const entitlementsQuery = useProjectEntitlements(projectId, {
     search: search || undefined,
@@ -119,12 +121,18 @@ export function HakedisContent({ projectId }: { projectId: string }) {
               {t('pages.projectTabs.hakedis.subtitle')}
             </p>
           </div>
-          {entitlements.length > 0 && (
-            <Button size="sm" variant="outline" onClick={handleExportCsv}>
-              <Download className="me-1 size-4" />
-              CSV
+          <div className="flex items-center gap-2">
+            {entitlements.length > 0 && (
+              <Button size="sm" variant="outline" onClick={handleExportCsv}>
+                <Download className="me-1 size-4" />
+                CSV
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setOpenNew(true)}>
+              <Plus className="me-1 size-4" />
+              {t('pages.projectTabs.hakedis.addEntitlement')}
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Stat cards */}
@@ -275,6 +283,12 @@ export function HakedisContent({ projectId }: { projectId: string }) {
           </>
         )}
       </div>
+
+      <NewEntitlementSheet
+        open={openNew}
+        onOpenChange={setOpenNew}
+        projectId={projectId}
+      />
     </Container>
   );
 }

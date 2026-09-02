@@ -24,6 +24,7 @@ import {
   LayoutGrid,
   List,
   MapPin,
+  Plus,
   RotateCw,
   Search,
   Users,
@@ -36,6 +37,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useProjects } from '@/hooks/use-santiyepro-api';
+import Link from 'next/link';
 import {
   ProjectStatus,
   ProjectStatusLabels,
@@ -160,6 +162,12 @@ export default function ProjectsPage() {
             {t('pages.projects.subtitle')}
           </p>
         </div>
+        <Button asChild size="sm" className="gap-1.5">
+          <Link href="/projects/new" data-tour="projeler-create">
+            <Plus className="size-3.5" />
+            {t('pages.projects.newProject')}
+          </Link>
+        </Button>
       </div>
 
       {/* Filtre bar */}
