@@ -129,6 +129,25 @@ export function useCreateProject(): UseMutationResult<
   });
 }
 
+/**
+ * Sprint 8.3b — Tek proje fetch.
+ * Hero component ve proje bağlamı sayfaları için kullanılır.
+ * Laravel: GET /api/projects/{id}
+ */
+export function useProject(
+  projectId: string,
+): UseQueryResult<{ data: Project }, Error> {
+  return useQuery<{ data: Project }, Error>({
+    queryKey: ['project', projectId],
+    queryFn: () =>
+      api.get<{ data: Project }>(`/projects/${projectId}`) as Promise<{
+        data: Project;
+      }>,
+    enabled: Boolean(projectId),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // ============================================
 // FİRMALAR
 // ============================================

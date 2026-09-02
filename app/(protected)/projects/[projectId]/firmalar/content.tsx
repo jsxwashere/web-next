@@ -1,7 +1,14 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Building2, Mail, Phone, Plus, Search, X as XIcon } from 'lucide-react';
+import {
+  Building2,
+  Mail,
+  Phone,
+  Plus,
+  Search,
+  X as XIcon,
+} from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Container } from '@/components/common/container';
@@ -21,11 +28,12 @@ import type { Firm } from '@/lib/api/types';
 import { NewFirmSheet } from './_components/new-firm-sheet';
 
 /**
- * Sprint 5 — Firmalar (project-scoped).
+ * Sprint 8.3b — Firmalar (project-scoped) — ŞantiyePro tasarımına uyarlandı.
  *
- * API: GET /api/projects/{projectId}/firms
- *
- * Filtre: tip (tedarikçi/taşeron/kurum/diğer) + arama
+ * Taşınan özellikler:
+ *  - Üst KPI: Toplam firma + tip dağılımı
+ *  - Tip sekmeleri: Tedarikçi / Taşeron / İşçi / Kurum / Diğer
+ *  - Arama + firma kartları (avatar, tip badge, kategori, telefon, e-posta)
  */
 
 type TypeFilter = 'all' | FirmTypeKey;
@@ -61,7 +69,8 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
         return (
           f.name.toLowerCase().includes(q) ||
           (f.tax_number ?? '').toLowerCase().includes(q) ||
-          (f.contact_name ?? '').toLowerCase().includes(q)
+          (f.contact_name ?? '').toLowerCase().includes(q) ||
+          (f.specialty ?? '').toLowerCase().includes(q)
         );
       }
       return true;
@@ -70,8 +79,8 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
 
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = { all: firms.length };
-    for (const t of Object.values(FirmType)) {
-      counts[t] = firms.filter((f) => f.type === t).length;
+    for (const key of Object.values(FirmType)) {
+      counts[key] = firms.filter((f) => f.type === key).length;
     }
     return counts;
   }, [firms]);
@@ -79,9 +88,21 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
   if (firmsQuery.isLoading) {
     return (
       <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-3 w-64" />
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-3 w-64" />
+          </div>
+          <Skeleton className="h-8 w-32 rounded-md" />
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+        </div>
+        <div className="flex flex-wrap gap-2 border-b border-border pb-4">
+          <Skeleton className="h-7 w-20 rounded-full" />
+          <Skeleton className="h-7 w-20 rounded-full" />
+          <Skeleton className="ms-auto h-8 w-64 rounded-md" />
         </div>
         <div className="space-y-2">
           {[1, 2, 3, 4].map((i) => (
@@ -109,6 +130,59 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
             <Plus className="me-1 size-4" />
             {t('pages.projectTabs.firmalar.addFirm')}
           </Button>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <Building2 className="size-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('pages.projectTabs.firmalar.totalCount')}
+                  </p>
+                  <p className="text-2xl font-bold tabular-nums">{firms.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-500/10 p-3">
+                  <Building2 className="size-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {FirmTypeLabels[FirmType.PROVIDER]}
+                  </p>
+                  <p className="text-2xl font-bold tabular-nums">
+                    {typeCounts[FirmType.PROVIDER] ?? 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-amber-500/10 p-3">
+                  <Building2 className="size-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {FirmTypeLabels[FirmType.SUBCONTRACTOR]}
+                  </p>
+                  <p className="text-2xl font-bold tabular-nums">
+                    {typeCounts[FirmType.SUBCONTRACTOR] ?? 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filtre barı */}
@@ -166,7 +240,7 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
                 icon={Building2}
                 title={
                   search || activeType !== 'all'
-                    ? t('pages.firms.noResults')
+                    ? t('pages.projectTabs.firmalar.noResults')
                     : t('pages.projectTabs.firmalar.noFirms')
                 }
                 description={
@@ -202,7 +276,12 @@ export function FirmalarContent({ projectId }: { projectId: string }) {
                     </div>
                     {firm.contact_name && (
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {firm.contact_name}
+                        {t('pages.projectTabs.firmalar.contact')}: {firm.contact_name}
+                      </p>
+                    )}
+                    {firm.specialty && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {firm.specialty}
                       </p>
                     )}
                   </div>

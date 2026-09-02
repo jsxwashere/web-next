@@ -10,13 +10,17 @@ export default function TahsilatlarLoading() {
         </div>
         <Skeleton className="h-8 w-32 rounded-md" />
       </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {[1, 2].map((i) => (
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
           <Skeleton key={i} className="h-24 rounded-xl" />
         ))}
       </div>
       <div className="flex flex-wrap gap-2 border-b border-border pb-4">
-        <Skeleton className="h-8 w-64 rounded-md" />
+        <Skeleton className="h-7 w-20 rounded-full" />
+        <Skeleton className="h-7 w-20 rounded-full" />
+        <Skeleton className="h-7 w-20 rounded-full" />
+        <Skeleton className="h-7 w-20 rounded-full" />
+        <Skeleton className="ms-auto h-8 w-64 rounded-md" />
       </div>
       <div className="space-y-2">
         {[1, 2, 3, 4].map((i) => (

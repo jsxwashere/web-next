@@ -10,8 +10,8 @@ export default function SozlesmelerLoading() {
         </div>
         <Skeleton className="h-8 w-32 rounded-md" />
       </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
           <Skeleton key={i} className="h-24 rounded-xl" />
         ))}
       </div>
@@ -23,7 +23,7 @@ export default function SozlesmelerLoading() {
       </div>
       <div className="space-y-2">
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-20 rounded-lg" />
+          <Skeleton key={i} className="h-24 rounded-lg" />
         ))}
       </div>
     </div>

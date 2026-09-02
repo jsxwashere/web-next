@@ -326,11 +326,23 @@
         "subtitle": "Bu projedeki tahsilatlar ve gelir kayıtları.",
         "total": "Toplam Tahsilat",
         "count": "Tahsilat Sayısı",
+        "thisMonth": "Bu Ay",
+        "dailyAvg": "Günlük Ortalama",
+        "overdue": "Gecikmiş",
         "noCollections": "Henüz tahsilat yok",
         "noCollectionsDesc": "Tahsilat eklediğinizde burada listelenir.",
         "noResults": "Filtreye uygun tahsilat bulunamadı",
         "searchPlaceholder": "Tahsilat ara...",
-        "addCollection": "Yeni Tahsilat"
+        "addCollection": "Yeni Tahsilat",
+        "all": "Tümü",
+        "onTime": "Zamanında",
+        "scheduled": "Vadeli",
+        "delayed": "Gecikmiş",
+        "contractRef": "Sözleşme",
+        "dateRange": "Tarih Aralığı",
+        "overdueAlert": "{count} gecikmiş tahsilat — toplam {amount}",
+        "overdueEmpty": "Tüm tahsilatlar zamanında.",
+        "exportCsv": "CSV Dışa Aktar"
       },
       "odemeler": {
         "title": "Ödemeler",
@@ -339,6 +351,8 @@
         "income": "Toplam Gelir",
         "net": "Net",
         "overdueCount": "Geciken Ödeme",
+        "overdueTotal": "Toplam Geciken",
+        "pending": "Bekleyen Ödemeler",
         "noTransactions": "Henüz işlem yok",
         "noTransactionsDesc": "Ödeme veya tahsilat eklediğinizde burada görünür.",
         "noResults": "Filtreye uygun işlem yok",
@@ -348,19 +362,40 @@
         "expenseOnly": "Giderler",
         "incomeOnly": "Gelirler",
         "paidOnly": "Ödenmiş",
-        "unpaidOnly": "Bekleyen"
+        "unpaidOnly": "Bekleyen",
+        "statusPaid": "ÖDENDİ",
+        "statusUpcoming": "GELECEK",
+        "statusOverdue": "GECİKTİ",
+        "statusAdjustment": "MUTABAKAT",
+        "filteredTotals": "Filtrelenen toplamlar",
+        "contract": "Sözleşme",
+        "category": "Kategori",
+        "overdueAlert": "{count} gecikmiş ödeme — toplam {amount}",
+        "exportCsv": "CSV Dışa Aktar",
+        "firm": "Firma",
+        "personnel": "Personel",
+        "paymentSource": "Ödeme Kaynağı"
       },
       "sozlesmeler": {
         "title": "Sözleşmeler",
         "subtitle": "Bu projeye bağlı sözleşme kayıtları.",
         "total": "Sözleşme Tutarı",
         "paid": "Ödenen",
+        "remaining": "Kalan",
         "count": "Sözleşme Sayısı",
+        "activeCount": "Aktif Sözleşme",
+        "completionRate": "Tamamlanma",
         "noContracts": "Henüz sözleşme yok",
         "noContractsDesc": "Yüklenici veya tedarikçi sözleşmesi eklediğinizde burada görünür.",
         "noResults": "Filtreye uygun sözleşme yok",
         "searchPlaceholder": "Sözleşme veya firma ara...",
-        "addContract": "Yeni Sözleşme"
+        "addContract": "Yeni Sözleşme",
+        "allTypes": "Tüm Tipler",
+        "allStatuses": "Tüm Durumlar",
+        "progress": "İlerleme",
+        "paidOf": "{paid} / {total}",
+        "firm": "Firma",
+        "dateRange": "Tarih Aralığı"
       },
       "personel": {
         "title": "Personel",
@@ -370,7 +405,28 @@
         "noPersonnel": "Bu projeye henüz personel atanmamış",
         "noPersonnelDesc": "Personel modülünden bu projeye atama yapabilirsiniz.",
         "searchPlaceholder": "Personel ara...",
-        "addPersonnel": "Yeni Personel"
+        "addPersonnel": "Yeni Personel",
+        "todayAtSite": "Bugün Şantiyede",
+        "todayAtSiteSub": "Devam kayıtları",
+        "dailyCount": "Günlük",
+        "weeklyCount": "Haftalık",
+        "monthlyCount": "Aylık",
+        "passive": "Pasif",
+        "left": "Ayrıldı",
+        "all": "Tümü",
+        "filters": {
+          "active": "Aktif",
+          "passive": "Pasif",
+          "all": "Tümü",
+          "salaryType": "Maaş Tipi"
+        },
+        "attendanceBadge": "Şantiyede",
+        "noResults": "Filtreye uygun personel bulunamadı",
+        "deactivate": "Pasife al",
+        "activate": "Aktifleştir",
+        "wagePerDay": "/ Gün",
+        "wagePerWeek": "/ Hafta",
+        "wagePerMonth": "/ Ay"
       },
       "firmalar": {
         "title": "Firmalar",
@@ -378,17 +434,38 @@
         "noFirms": "Bu projeye henüz firma bağlanmamış",
         "noFirmsDesc": "Firma eklediğinizde burada görünür.",
         "searchPlaceholder": "Firma ara...",
-        "addFirm": "Yeni Firma"
+        "addFirm": "Yeni Firma",
+        "totalCount": "Toplam Firma",
+        "types": {
+          "all": "Tüm Tipler",
+          "provider": "Tedarikçi",
+          "subcontractor": "Taşeron",
+          "worker": "İşçi",
+          "institution": "Kurum",
+          "other": "Diğer"
+        },
+        "noResults": "Filtreye uygun firma bulunamadı",
+        "contact": "İlgili",
+        "taxNumber": "VKN",
+        "speciality": "Uzmanlık"
       },
       "malzeme": {
         "title": "Malzeme",
         "subtitle": "Bu projeye ait malzeme ve irsaliye kayıtları.",
         "total": "Toplam Tutar",
         "count": "Kalem Sayısı",
+        "pendingCount": "Bekleyen Giriş",
+        "contractBound": "Sözleşmeye Bağlı",
         "noMaterials": "Henüz malzeme kaydı yok",
         "noMaterialsDesc": "Malzeme/irsaliye eklediğinizde burada görünür.",
         "searchPlaceholder": "Malzeme veya tedarikçi ara...",
-        "addMaterial": "Yeni Malzeme"
+        "addMaterial": "Yeni Malzeme",
+        "returnsOnly": "Sadece İadeler",
+        "all": "Tümü",
+        "supplier": "Tedarikçi",
+        "contract": "Sözleşme",
+        "ticket": "İrsaliye No",
+        "return": "İade"
       },
       "hakedis": {
         "title": "Hakediş",
@@ -396,11 +473,18 @@
         "total": "Toplam Hakediş",
         "pending": "Bekleyen Tutar",
         "approved": "Onaylanan",
+        "collected": "Tahsil Edilen",
+        "remaining": "Kalan",
         "count": "Hakediş Sayısı",
+        "progress": "Tahsil Oranı",
         "noEntitlements": "Henüz hakediş kaydı yok",
         "noEntitlementsDesc": "Hakediş oluşturduğunuzda burada listelenir.",
         "searchPlaceholder": "Firma veya sözleşme ara...",
-        "addEntitlement": "Yeni Hakediş"
+        "addEntitlement": "Yeni Hakediş",
+        "all": "Tümü",
+        "period": "Dönem",
+        "allFirms": "Tüm Firmalar",
+        "items": "kalem"
       },
       "raporlar": {
         "title": "Saha Raporları",
@@ -414,7 +498,27 @@
         "workDone": "Yapılan İşler",
         "blockers": "Engeller",
         "visitors": "Ziyaretçiler",
-        "safetyNotes": "Emniyet Notları"
+        "safetyNotes": "Emniyet Notları",
+        "thisWeek": "Bu Hafta",
+        "weatherDistribution": "Hava Durumu Dağılımı",
+        "noResults": "Filtreye uygun rapor bulunamadı",
+        "filters": {
+        "all": "Tümü",
+          "draft": "Taslak",
+          "submitted": "Gönderildi",
+          "weather": "Hava Durumu"
+        },
+        "noWeather": "—",
+        "photoCount": "{count} fotoğraf",
+        "detailTitle": "Saha Raporu Detayı"
+      },
+      "hero": {
+        "noLocation": "Konum belirtilmemiş",
+        "quickActions": "Hızlı İşlemler",
+        "newCollection": "Yeni Tahsilat",
+        "newPayment": "Yeni Ödeme",
+        "loading": "Yükleniyor...",
+        "projectNotFound": "Proje bulunamadı"
       },
       "cizimler": {
         "title": "Çizimler",
@@ -423,7 +527,16 @@
         "noDrawingsDesc": "Yeni bir DWG çizim yükleyerek başlayın.",
         "addDrawing": "Yeni Çizim",
         "fileSize": "Boyut",
-        "status": "Durum"
+        "status": "Durum",
+        "totalCount": "Toplam Çizim",
+        "parsed": "Parse Edilmiş",
+        "pending": "Bekleyen",
+        "failed": "Başarısız",
+        "format": "Format",
+        "formatAll": "Tüm Formatlar",
+        "noResults": "Filtreye uygun çizim bulunamadı",
+        "aiVersion": "AI v",
+        "parseDate": "Parse Tarihi"
       },
       "forms": {
         "newCollection": {
