@@ -1,58 +1,40 @@
-import { PrismaClient } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
-import { SystemSetting } from '@/app/models/system';
-
 /**
- * Checks if a record is unique in a Prisma table.
- * @param table - Table name in Prisma schema.
- * @param fields - Fields to check for uniqueness.
- * @param exclude - Fields to exclude from the check.
- * @returns - `true` if unique, otherwise `false`.
- * @throws - Error if the table does not exist.
+ * `lib/db.ts`
+ *
+ * Sprint 7 cleanup: Prisma kaldırıldı (Laravel API kullanılıyor).
+ *
+ * Geriye dönük uyumluluk shim'i — `isUnique` / `getSettings` çağrıları
+ * artık 404 (stub error) fırlatır. Yeni kod bu fonksiyonları
+ * kullanmamalı; Laravel'a doğrudan istek atmalı.
  */
-export async function isUnique<T extends keyof PrismaClient & string>(
-  table: T,
-  fields: Record<string, unknown>,
-  exclude?: Record<string, unknown>,
-): Promise<boolean> {
-  if (!(table in prisma)) {
-    throw new Error(`Table '${table}' does not exist in Prisma Client.`);
-  }
 
-  // Build the `where` clause
-  const whereClause: Record<string, unknown> = {
-    OR: Object.entries(fields).map(([key, value]) => ({ [key]: value })),
-  };
+import { prisma } from '@/lib/prisma';
 
-  // Add the exclude clause if provided
-  if (exclude) {
-    whereClause['NOT'] = Object.entries(exclude).map(([key, value]) => ({
-      [key]: value,
-    }));
-  }
-
-  // Define a type for a Prisma model with a findFirst method.
-  type PrismaModel = {
-    findFirst(args: { where: unknown }): Promise<unknown | null>;
-  };
-
-  // Cast the dynamic model to that type.
-  const model = prisma[table as keyof typeof prisma] as unknown as PrismaModel;
-
-  // Now call findFirst.
-  const record = await model.findFirst({
-    where: whereClause,
-  });
-
-  return !record;
+interface SystemSettingLike {
+  id: string;
+  [key: string]: unknown;
 }
 
 /**
- * Fetches the first record from the `setting` table.
- * @returns - Settings with related `role` data or `null`.
+ * @deprecated Prisma kaldırıldı — Sprint 7 cleanup.
+ * @throws Bu fonksiyon artık çağrılamaz.
  */
-export async function getSettings(): Promise<SystemSetting | null> {
-  const settings = await prisma.systemSetting.findFirst();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function isUnique(..._args: unknown[]): Promise<boolean> {
+  void prisma;
+  throw new Error(
+    '[lib/db.ts] isUnique() kaldırıldı — Laravel API kullanılıyor. Sprint 7 cleanup.',
+  );
+}
 
-  return settings;
+/**
+ * @deprecated Prisma kaldırıldı — Sprint 7 cleanup.
+ * @throws Bu fonksiyon artık çağrılamaz.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function getSettings(..._args: unknown[]): Promise<SystemSettingLike | null> {
+  void prisma;
+  throw new Error(
+    '[lib/db.ts] getSettings() kaldırıldı — Laravel API kullanılıyor. Sprint 7 cleanup.',
+  );
 }

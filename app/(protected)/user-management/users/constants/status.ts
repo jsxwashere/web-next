@@ -18,5 +18,9 @@ export const UserStatusProps = {
 
 // Function to get status properties
 export const getUserStatusProps = (status: UserStatus) => {
-  return UserStatusProps[status] || { label: 'Unknown', variant: 'success' };
+  return (
+    (UserStatusProps as Record<string, { label: string; variant: string }>)[
+      status
+    ] || { label: 'Unknown', variant: 'success' }
+  );
 };

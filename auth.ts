@@ -3,15 +3,14 @@
  *
  * NextAuth v5 (Auth.js) full instance — node runtime'da çalışır.
  *
- * **Not:** Şu an kurulu paket `next-auth@4.24.11` (v4). Sprint 4'te
- * `npm install next-auth@5.0.0-beta` ile v5'e geçilecek; bu dosya
- * o noktada `import NextAuth from 'next-auth'` çağrısını aynen
- * kullanmaya devam edecek (v5 API uyumlu).
+ * v5 API:
+ *   - `NextAuth(config)` artık providers'ı config içinde bekliyor
+ *     (v4'teki gibi `[...nextauth]` route handler'ı bunu kullanmıyor).
+ *   - `auth`, `signIn`, `signOut`, `handlers` export'ları v5'te aynı
+ *     isimle döner.
  *
- * Edge middleware ile paylaşılan kısım `auth.config.ts`'ten gelir;
- * burada yalnızca:
- *   1. Credentials provider'ın `authorize()` callback'i (Laravel'a HTTP)
- *   2. `auth()` / `signIn` / `signOut` / `handlers` export'ları
+ * Credentials provider'ın `authorize()` callback'i (Laravel'a HTTP)
+ * burada tanımlanır; edge-safe kısım `auth.config.ts`'ten gelir.
  */
 
 import NextAuth from 'next-auth';
@@ -108,7 +107,8 @@ async function authorizeLaravel(
 
   const ok = payload as LaravelLoginOk;
 
-  // v4 User tipi `status` zorunlu; Sprint 4 v5'e geçişte kaldırılacak.
+  // v5 User tipi `status` zorunlu değil; yine de dolduruyoruz
+  // (types.ts augmentation'ı kullanıyor).
   const user: AuthorizeUser = {
     id: String(ok.data.member.account_id),
     email: ok.data.member.email ?? email,

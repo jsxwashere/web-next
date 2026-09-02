@@ -1,5 +1,11 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+/**
+ * `services/system-log.ts`
+ *
+ * Sprint 7 cleanup: Prisma kaldırıldı (Laravel API kullanılıyor).
+ *
+ * Bu fonksiyon artık no-op — çağrıldığında uyarı loglar ama
+ * veritabanına yazmaz. Yeni kod Laravel API üzerinden log atmalı.
+ */
 
 export interface SystemLogProps {
   event: string;
@@ -11,34 +17,18 @@ export interface SystemLogProps {
   meta?: string;
 }
 
+/**
+ * @deprecated Prisma kaldırıldı — Sprint 7 cleanup. Bu fonksiyon
+ * artık no-op; log'lar Laravel tarafına taşınmalı.
+ */
 export async function systemLog(
-  {
-    event,
-    userId,
-    entityId,
-    entityType,
-    description,
-    ipAddress,
-    meta,
-  }: SystemLogProps,
-  tx?: Prisma.TransactionClient, // Optional transaction
-) {
-  try {
-    // Use transaction if available, otherwise use Prisma client
-    const connection = tx ?? prisma;
-
-    await connection.systemLog.create({
-      data: {
-        event,
-        userId,
-        entityId,
-        entityType,
-        description,
-        ipAddress,
-        meta,
-      },
-    });
-  } catch (error) {
-    console.error('[LOG] Failed to log activity:', error);
+  props: SystemLogProps,
+  _tx?: unknown,
+): Promise<void> {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[services/system-log.ts] systemLog() no-op — Prisma kaldırıldı.',
+      props.event,
+    );
   }
 }

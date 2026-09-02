@@ -44,8 +44,9 @@ export async function performSignOut(
   }
 
   // 2. NextAuth session temizle + yönlendir
+  const redirectFlag = options?.redirect ?? true;
   await signOut({
     callbackUrl: redirectTo,
-    redirect: options?.redirect ?? true,
+    redirect: redirectFlag as true,
   });
 }

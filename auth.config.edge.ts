@@ -1,7 +1,7 @@
 /**
  * `auth.config.edge.ts`
  *
- * NextAuth v4 — EDGE-SAFE minimal konfigürasyon.
+ * NextAuth v5 (Auth.js) — EDGE-SAFE minimal konfigürasyon.
  *
  * Bu dosya SADECE middleware.ts tarafından import edilir. Edge runtime'da
  * `openid-client` ve diğer Node-only bağımlılıklar yüklenemediğinden,
@@ -13,14 +13,12 @@
  * Amaç: Sadece `callbacks.authorized` ile route koruma kararı vermek.
  */
 
-import type { NextAuthOptions } from 'next-auth';
+import type { NextAuthConfig } from 'next-auth';
 
 /**
- * v4 ile uyumlu tip aliası. v5'te `import type { NextAuthConfig } from 'next-auth'`.
+ * v5 tip alias'ı.
  */
-type EdgeAuthConfig = NextAuthOptions;
-
-export const authConfigEdge: EdgeAuthConfig = {
+export const authConfigEdge: NextAuthConfig = {
   providers: [], // Edge'de provider yüklenmez — sadece auth kararı
   session: { strategy: 'jwt' },
   pages: {
@@ -31,7 +29,6 @@ export const authConfigEdge: EdgeAuthConfig = {
   callbacks: {
     /**
      * `authorized` callback — middleware'de her istek için çalışır.
-     * `auth` middleware'i (NextAuth v4) bu callback'e göre karar verir.
      * `true` dönerse request geçer, `false` dönerse `pages.signIn`'e redirect.
      */
     authorized({ auth, request }) {
@@ -47,9 +44,6 @@ export const authConfigEdge: EdgeAuthConfig = {
         pathname.startsWith('/verify-email');
 
       if (isPublicAuthRoute) return true;
-
-      // Root, marketing sayfaları (opsiyonel — şimdilik login gerektirsin)
-      // if (pathname === '/') return true;
 
       // Diğer tüm sayfalar → login gerekli
       return isLoggedIn;

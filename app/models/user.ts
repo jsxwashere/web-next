@@ -1,11 +1,34 @@
-import { $Enums } from '@prisma/client';
-import { SystemSetting } from './system';
+/**
+ * `app/models/user.ts`
+ *
+ * Sprint 7 cleanup: Prisma kaldırıldı (Laravel API kullanılıyor).
+ *
+ * Bu dosya eski `import { User, UserStatus, UserRole, ... } from
+ * '@/app/models/user'` çağrılarının TypeScript derlemesini geçirmesi
+ * için minimal tip tanımları sağlar. UI bileşenleri Sprint 8'de
+ * Laravel API'sine taşınırken bu tipler de silinecek.
+ *
+ * NOT: Prisma `$Enums.UserStatus` referansı kaldırıldı; status alanı
+ * artık string union olarak modellenir.
+ */
 
-// Enums
-export const UserStatus = $Enums.UserStatus;
-export type UserStatus = $Enums.UserStatus;
+// Status — eskiden Prisma `$Enums.UserStatus`; artık basit string.
+export type UserStatus =
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'PENDING'
+  | 'SUSPENDED'
+  | 'BLOCKED';
 
-// Models
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  PENDING: 'PENDING',
+  SUSPENDED: 'SUSPENDED',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+// Modeller — sadece UI prop tipleri için iskelet
 export interface User {
   id: string;
   email: string;
@@ -41,7 +64,6 @@ export interface UserRole {
   createdByUser?: User | null;
   users?: User[];
   permissions?: UserRolePermission[];
-  settings?: SystemSetting[];
 }
 
 export interface UserPermission {
@@ -76,6 +98,7 @@ export interface UserAddress {
   isDefault: boolean;
   user?: User;
 }
+
 export interface Account {
   id: string;
   userId: string;
@@ -105,3 +128,8 @@ export interface VerificationToken {
   token: string;
   expires: Date;
 }
+
+// SystemSetting — getSettings() için kullanılıyordu; lib/db.ts shim'inde
+// referansı kalmasın diye burada yeniden export ediyoruz.
+import type { SystemSetting } from './system';
+export type { SystemSetting };

@@ -41,7 +41,7 @@ function Code({
   children,
   ...props
 }: CodeProps) {
-  const { copy, copied } = useCopyToClipboard();
+  const { copyToClipboard: copy, isCopied: copied } = useCopyToClipboard();
   const Comp = asChild ? SlotPrimitive.Slot : 'code';
   const textToCopy = copyText || (typeof children === 'string' ? children : '');
 

@@ -1,16 +1,11 @@
 /**
  * `auth.config.ts`
  *
- * NextAuth v5 (Auth.js) — edge-safe konfigürasyon parçası.
+ * NextAuth v5 (Auth.js) — node runtime konfigürasyonu.
  *
- * Kurulu paket: `next-auth@4.24.11` (v4). Sprint 4'te
- * `next-auth@5.0.0-beta` upgrade'i ile birlikte bu dosyadaki
- * `NextAuthConfig` tip referansı `next-auth`'ten çözülecek ve
- * `interface NextAuthConfig` kullanımına geçilecek.
- *
- * Şu an için tip tanımlarını burada locally tutuyoruz; v4 API'si
- * `NextAuthOptions` ile aynı yapıya sahip (v5 `NextAuthConfig`'in
- * edge-safe alt kümesi).
+ * Bu dosya JWT/session callback'lerini ve Credentials provider
+ * placeholder'ını içerir. Edge-safe kısım (`authorized` callback)
+ * `auth.config.edge.ts`'ten gelir.
  *
  * Bölümler:
  *   1. providers[]         → Credentials placeholder (edge-safe iskelet)
@@ -20,32 +15,26 @@
  *   5. pages               → özel signin/signout sayfaları
  */
 
-import type { NextAuthOptions, Session } from 'next-auth';
+import type { Session } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';
+import type { NextAuthConfig } from 'next-auth';
 import type { MemberPayload } from './lib/auth/types';
 
 /**
- * v4 ile uyumlu tip aliası. v5'te `import type { NextAuthConfig } from 'next-auth'`
- * ile değiştirilecek.
+ * v5 tip alias'ı.
  */
-type AuthConfig = NextAuthOptions;
-
-/**
- * Edge runtime'da koşan `middleware.ts` için güvenli placeholder provider.
- * Asıl `authorize` implementasyonu `auth.ts` içindedir.
- */
-const credentialsPlaceholder = Credentials({
-  name: 'Credentials',
-  credentials: {
-    email: { label: 'Email', type: 'text' },
-    password: { label: 'Password', type: 'password' },
-  },
-  authorize: async () => null,
-});
-
-export const authConfig: AuthConfig = {
-  providers: [credentialsPlaceholder],
+export const authConfig: NextAuthConfig = {
+  providers: [
+    Credentials({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      authorize: async () => null,
+    }),
+  ],
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
@@ -60,9 +49,6 @@ export const authConfig: AuthConfig = {
     /**
      * JWT callback — provider'dan dönen user objesi ilk kez burada
      * token'a aktarılır; sonraki çağrılarda yalnızca `token` gelir.
-     *
-     * v4'te middleware-level "authorized" callback'i yok; v5'e geçişte
-     * `callbacks.authorized` callback'i eklenecek (authConfig içinde).
      */
     async jwt({ token, user }) {
       // İlk giriş — `user` Laravel authorize'dan dönen payload
