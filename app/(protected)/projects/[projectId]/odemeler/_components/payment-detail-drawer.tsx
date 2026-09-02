@@ -13,6 +13,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowUpRight,
   Calendar,
@@ -61,6 +62,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  optimisticUpdate,
+  snapshotQuery,
+} from '@/lib/api/optimistic';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 
 const CURRENCY_OPTIONS = [
@@ -125,6 +130,7 @@ export function PaymentDetailDrawer({
   transactionId,
 }: PaymentDetailDrawerProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: resp, isLoading, error } = useGetTransaction(transactionId);
   const updateMutation = useUpdateTransaction();
   const item = resp?.data;
@@ -159,7 +165,29 @@ export function PaymentDetailDrawer({
 
   const onSubmit = form.handleSubmit(async (data) => {
     if (!transactionId) return;
+    const detailKey = ['transaction', transactionId] as const;
+    const snapshot = snapshotQuery<{ data: typeof item }>(queryClient, detailKey);
+
     try {
+      optimisticUpdate<{ data: typeof item }>(queryClient, detailKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data
+            ? {
+                ...old.data,
+                amount: data.amount,
+                currency: data.currency,
+                payment_type: data.payment_type,
+                date: data.date || null,
+                due_date: data.due_date || null,
+                description: data.description || null,
+                is_paid: data.is_paid,
+              }
+            : old.data,
+        };
+      });
+
       await updateMutation.mutateAsync({
         id: transactionId,
         data: {
@@ -172,15 +200,18 @@ export function PaymentDetailDrawer({
           is_paid: data.is_paid,
         },
       });
-      toast.success('Ödeme güncellendi');
+      toast.success(t('pages.projectTabs.common.saved'));
       onOpenChange(false);
     } catch (err) {
+      if (snapshot) {
+        queryClient.setQueryData(detailKey, snapshot);
+      }
       const message =
         err instanceof ApiError
           ? (err.payload as { message?: string })?.message ?? err.message
           : err instanceof Error
             ? err.message
-            : 'Ödeme güncellenemedi';
+            : t('pages.projectTabs.common.saveError');
       toast.error(message);
     }
   });
@@ -199,7 +230,9 @@ export function PaymentDetailDrawer({
               <div className="grid size-8 place-items-center rounded-md bg-rose-500/10">
                 <ArrowUpRight className="size-4 text-rose-600" />
               </div>
-              <SheetTitle>Ödeme Detayı</SheetTitle>
+              <SheetTitle>
+                {t('pages.projectTabs.odemeler.detailDrawer.title')}
+              </SheetTitle>
             </div>
             <Button
               type="button"
@@ -223,7 +256,7 @@ export function PaymentDetailDrawer({
         ) : error || !item ? (
           <SheetBody>
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-              Ödeme yüklenemedi.
+              {t('pages.projectTabs.odemeler.detailDrawer.loadError')}
             </div>
           </SheetBody>
         ) : (
@@ -234,7 +267,9 @@ export function PaymentDetailDrawer({
             >
               <SheetBody className="flex-1 space-y-4 overflow-y-auto">
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
-                  <p className="text-xs text-muted-foreground">Tutar</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('pages.projectTabs.common.amount')}
+                  </p>
                   <p className="text-2xl font-bold tabular-nums text-rose-600 dark:text-rose-400">
                     -{formatAmount(item.amount, item.currency ?? 'TRY')}
                   </p>
@@ -260,25 +295,25 @@ export function PaymentDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Salt Okunur Bilgiler
+                    {t('pages.projectTabs.common.readOnlyInfo')}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <FieldRow label="ID">{item.id}</FieldRow>
-                    <FieldRow label="Tür">
+                    <FieldRow label={t('pages.projectTabs.common.status')}>
                       {item.type === 'expense' ? 'Gider' : 'Gelir'}
                     </FieldRow>
-                    <FieldRow label="Ödeme Tipi">{paymentTypeLabel}</FieldRow>
-                    <FieldRow label="Ödeme Kaynağı">
+                    <FieldRow label={t('pages.projectTabs.common.paymentType')}>{paymentTypeLabel}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.paymentSource')}>
                       {item.payment_source_name ?? '—'}
                     </FieldRow>
-                    <FieldRow label="Firma">{item.firm_name ?? '—'}</FieldRow>
-                    <FieldRow label="Personel">
+                    <FieldRow label={t('pages.projectTabs.common.firm')}>{item.firm_name ?? '—'}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.employee')}>
                       {item.employee_name ?? '—'}
                     </FieldRow>
-                    <FieldRow label="Sözleşme">
+                    <FieldRow label={t('pages.projectTabs.common.contract')}>
                       {item.contract_name ?? '—'}
                     </FieldRow>
-                    <FieldRow label="Kategori">
+                    <FieldRow label={t('pages.projectTabs.common.categoryId')}>
                       {item.category_name ?? '—'}
                     </FieldRow>
                   </div>
@@ -288,7 +323,7 @@ export function PaymentDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Düzenlenebilir Alanlar
+                    {t('pages.projectTabs.common.editableFields')}
                   </p>
 
                   <FormField
@@ -296,7 +331,7 @@ export function PaymentDetailDrawer({
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tutar *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.amount')} *</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -316,7 +351,7 @@ export function PaymentDetailDrawer({
                       name="currency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Para Birimi</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.common.currency')}</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
@@ -344,7 +379,7 @@ export function PaymentDetailDrawer({
                       name="payment_type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ödeme Tipi</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.common.paymentType')}</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
@@ -374,7 +409,7 @@ export function PaymentDetailDrawer({
                       name="date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ödeme Tarihi *</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newPayment.paymentDate')} *</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} value={field.value ?? ''} />
                           </FormControl>
@@ -388,7 +423,7 @@ export function PaymentDetailDrawer({
                       name="due_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Vade Tarihi</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newCollection.dueDate')}</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
@@ -407,10 +442,10 @@ export function PaymentDetailDrawer({
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Açıklama</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.description')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Ödeme açıklaması"
+                            placeholder={t('pages.projectTabs.forms.newPayment.descriptionPlaceholder')}
                             {...field}
                             value={field.value ?? ''}
                           />
@@ -425,7 +460,7 @@ export function PaymentDetailDrawer({
                     name="is_paid"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ödeme Durumu</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.status')}</FormLabel>
                         <Select
                           onValueChange={(v) => field.onChange(v === 'true')}
                           value={field.value ? 'true' : 'false'}
@@ -439,13 +474,13 @@ export function PaymentDetailDrawer({
                             <SelectItem value="true">
                               <span className="inline-flex items-center gap-1">
                                 <CheckCircle2 className="size-3 text-emerald-600" />
-                                Ödendi
+                                {t('pages.projectTabs.odemeler.statusPaid')}
                               </span>
                             </SelectItem>
                             <SelectItem value="false">
                               <span className="inline-flex items-center gap-1">
                                 <Clock className="size-3 text-amber-600" />
-                                Beklemede
+                                {t('pages.projectTabs.odemeler.statusUpcoming')}
                               </span>
                             </SelectItem>
                           </SelectContent>
@@ -470,7 +505,7 @@ export function PaymentDetailDrawer({
                   {updateMutation.isPending && (
                     <LoaderCircleIcon className="me-1 size-4 animate-spin" />
                   )}
-                  {updateMutation.isPending ? 'Kaydediliyor...' : t('common.buttons.save')}
+                  {updateMutation.isPending ? t('pages.projectTabs.common.saving') : t('common.buttons.save')}
                 </Button>
               </SheetFooter>
             </form>

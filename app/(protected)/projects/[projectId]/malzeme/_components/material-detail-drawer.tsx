@@ -13,6 +13,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { BoxIcon, Calendar, LoaderCircleIcon, X as XIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -46,6 +47,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  optimisticUpdate,
+  snapshotQuery,
+} from '@/lib/api/optimistic';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 
 const materialSchema = z.object({
@@ -84,6 +89,7 @@ export function MaterialDetailDrawer({
   materialId,
 }: MaterialDetailDrawerProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: resp, isLoading, error } = useGetMaterial(materialId);
   const updateMutation = useUpdateMaterial();
   const item = resp?.data;
@@ -112,7 +118,26 @@ export function MaterialDetailDrawer({
 
   const onSubmit = form.handleSubmit(async (data) => {
     if (!materialId) return;
+    const detailKey = ['material', materialId] as const;
+    const snapshot = snapshotQuery<{ data: typeof item }>(queryClient, detailKey);
+
     try {
+      optimisticUpdate<{ data: typeof item }>(queryClient, detailKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data
+            ? {
+                ...old.data,
+                name: data.name,
+                amount: data.amount,
+                delivery_date: data.delivery_date || null,
+                ticket_number: data.ticket_number || null,
+              }
+            : old.data,
+        };
+      });
+
       await updateMutation.mutateAsync({
         id: materialId,
         data: {
@@ -122,15 +147,18 @@ export function MaterialDetailDrawer({
           ticket_number: data.ticket_number || null,
         },
       });
-      toast.success('Malzeme güncellendi');
+      toast.success(t('pages.projectTabs.common.saved'));
       onOpenChange(false);
     } catch (err) {
+      if (snapshot) {
+        queryClient.setQueryData(detailKey, snapshot);
+      }
       const message =
         err instanceof ApiError
           ? (err.payload as { message?: string })?.message ?? err.message
           : err instanceof Error
             ? err.message
-            : 'Malzeme güncellenemedi';
+            : t('pages.projectTabs.common.saveError');
       toast.error(message);
     }
   });
@@ -158,7 +186,9 @@ export function MaterialDetailDrawer({
                   }
                 />
               </div>
-              <SheetTitle>Malzeme Detayı</SheetTitle>
+              <SheetTitle>
+                {t('pages.projectTabs.malzeme.detailDrawer.title')}
+              </SheetTitle>
             </div>
             <Button
               type="button"
@@ -182,7 +212,7 @@ export function MaterialDetailDrawer({
         ) : error || !item ? (
           <SheetBody>
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-              Malzeme yüklenemedi.
+              {t('pages.projectTabs.malzeme.detailDrawer.loadError')}
             </div>
           </SheetBody>
         ) : (
@@ -218,7 +248,7 @@ export function MaterialDetailDrawer({
                     )}
                     {item.is_return && (
                       <Badge variant="destructive" className="h-4 px-1.5 text-[10px]">
-                        İade
+                        {t('pages.projectTabs.malzeme.return')}
                       </Badge>
                     )}
                   </div>
@@ -228,17 +258,17 @@ export function MaterialDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Salt Okunur Bilgiler
+                    {t('pages.projectTabs.common.readOnlyInfo')}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <FieldRow label="ID">{item.id}</FieldRow>
-                    <FieldRow label="Proje ID">{item.project_id}</FieldRow>
-                    <FieldRow label="Tedarikçi">{supplier}</FieldRow>
-                    <FieldRow label="Birim">{item.unit ?? '—'}</FieldRow>
-                    <FieldRow label="Sözleşme ID">
+                    <FieldRow label={t('pages.projectTabs.common.projectId')}>{item.project_id}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.supplier')}>{supplier}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.unit')}>{item.unit ?? '—'}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.contractId')}>
                       {item.contract_id ?? '—'}
                     </FieldRow>
-                    <FieldRow label="İrsaliye No">
+                    <FieldRow label={t('pages.projectTabs.malzeme.ticket')}>
                       {item.ticket_number ?? '—'}
                     </FieldRow>
                   </div>
@@ -248,7 +278,7 @@ export function MaterialDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Düzenlenebilir Alanlar
+                    {t('pages.projectTabs.common.editableFields')}
                   </p>
 
                   <FormField
@@ -256,9 +286,9 @@ export function MaterialDetailDrawer({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Malzeme Adı *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.forms.newMaterial.name')} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Malzeme adı" {...field} />
+                          <Input placeholder={t('pages.projectTabs.forms.newMaterial.namePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -270,7 +300,7 @@ export function MaterialDetailDrawer({
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tutar *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.amount')} *</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" min="0" {...field} />
                         </FormControl>
@@ -285,7 +315,7 @@ export function MaterialDetailDrawer({
                       name="delivery_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Teslim Tarihi</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newMaterial.deliveryDate')}</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
@@ -332,7 +362,7 @@ export function MaterialDetailDrawer({
                   {updateMutation.isPending && (
                     <LoaderCircleIcon className="me-1 size-4 animate-spin" />
                   )}
-                  {updateMutation.isPending ? 'Kaydediliyor...' : t('common.buttons.save')}
+                  {updateMutation.isPending ? t('pages.projectTabs.common.saving') : t('common.buttons.save')}
                 </Button>
               </SheetFooter>
             </form>

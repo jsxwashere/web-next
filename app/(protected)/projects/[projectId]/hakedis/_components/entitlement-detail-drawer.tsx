@@ -12,6 +12,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ClipboardList,
   LoaderCircleIcon,
@@ -62,6 +63,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  optimisticUpdate,
+  snapshotQuery,
+} from '@/lib/api/optimistic';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 
 const STATUS_OPTIONS = [
@@ -106,6 +111,7 @@ export function EntitlementDetailDrawer({
   entitlementId,
 }: EntitlementDetailDrawerProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: resp, isLoading, error } = useGetEntitlement(entitlementId);
   const updateMutation = useUpdateEntitlement();
   const item = resp?.data;
@@ -132,7 +138,25 @@ export function EntitlementDetailDrawer({
 
   const onSubmit = form.handleSubmit(async (data) => {
     if (!entitlementId) return;
+    const detailKey = ['entitlement', entitlementId] as const;
+    const snapshot = snapshotQuery<{ data: typeof item }>(queryClient, detailKey);
+
     try {
+      optimisticUpdate<{ data: typeof item }>(queryClient, detailKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data
+            ? {
+                ...old.data,
+                delivery_date: data.delivery_date || null,
+                total_amount: data.total_amount,
+                status: data.status,
+              }
+            : old.data,
+        };
+      });
+
       await updateMutation.mutateAsync({
         id: entitlementId,
         data: {
@@ -141,15 +165,18 @@ export function EntitlementDetailDrawer({
           status: data.status,
         },
       });
-      toast.success('Hakediş güncellendi');
+      toast.success(t('pages.projectTabs.common.saved'));
       onOpenChange(false);
     } catch (err) {
+      if (snapshot) {
+        queryClient.setQueryData(detailKey, snapshot);
+      }
       const message =
         err instanceof ApiError
           ? (err.payload as { message?: string })?.message ?? err.message
           : err instanceof Error
             ? err.message
-            : 'Hakediş güncellenemedi';
+            : t('pages.projectTabs.common.saveError');
       toast.error(message);
     }
   });
@@ -165,7 +192,9 @@ export function EntitlementDetailDrawer({
               <div className="grid size-8 place-items-center rounded-md bg-primary/10">
                 <ClipboardList className="size-4 text-primary" />
               </div>
-              <SheetTitle>Hakediş Detayı</SheetTitle>
+              <SheetTitle>
+                {t('pages.projectTabs.hakedis.detailDrawer.title')}
+              </SheetTitle>
             </div>
             <Button
               type="button"
@@ -189,7 +218,7 @@ export function EntitlementDetailDrawer({
         ) : error || !item ? (
           <SheetBody>
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-              Hakediş yüklenemedi.
+              {t('pages.projectTabs.hakedis.detailDrawer.loadError')}
             </div>
           </SheetBody>
         ) : (
@@ -202,10 +231,10 @@ export function EntitlementDetailDrawer({
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-base font-bold">{item.firm_name ?? 'Firma belirtilmemiş'}</p>
+                      <p className="text-base font-bold">{item.firm_name ?? '—'}</p>
                       {item.delivery_date && (
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          Dönem: {formatDateTr(item.delivery_date)}
+                          {t('pages.projectTabs.hakedis.period')}: {formatDateTr(item.delivery_date)}
                         </p>
                       )}
                     </div>
@@ -226,7 +255,7 @@ export function EntitlementDetailDrawer({
                       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <TrendingUp className="size-3" />
-                          Tahsil Oranı
+                          {t('pages.projectTabs.hakedis.progress')}
                         </span>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -240,13 +269,13 @@ export function EntitlementDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Salt Okunur Bilgiler
+                    {t('pages.projectTabs.common.readOnlyInfo')}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <FieldRow label="ID">{item.id}</FieldRow>
-                    <FieldRow label="Proje ID">{item.project_id}</FieldRow>
-                    <FieldRow label="Firma">{item.firm_name ?? '—'}</FieldRow>
-                    <FieldRow label="Sözleşme ID">
+                    <FieldRow label={t('pages.projectTabs.common.projectId')}>{item.project_id}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.firm')}>{item.firm_name ?? '—'}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.contractId')}>
                       {item.contract_id ?? '—'}
                     </FieldRow>
                   </div>
@@ -257,7 +286,7 @@ export function EntitlementDetailDrawer({
                     <Separator />
                     <div className="space-y-2">
                       <p className="text-xs font-semibold text-muted-foreground">
-                        Hakediş Kalemleri ({details.length})
+                        {t('pages.projectTabs.hakedis.detailDrawer.items', { count: details.length })}
                       </p>
                       <div className="rounded-md border border-border">
                         <table className="w-full text-xs">
@@ -291,7 +320,7 @@ export function EntitlementDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Düzenlenebilir Alanlar
+                    {t('pages.projectTabs.common.editableFields')}
                   </p>
 
                   <FormField
@@ -299,7 +328,7 @@ export function EntitlementDetailDrawer({
                     name="delivery_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Dönem Sonu</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.forms.newEntitlement.periodEnd')}</FormLabel>
                         <FormControl>
                           <Input
                             type="date"
@@ -317,7 +346,7 @@ export function EntitlementDetailDrawer({
                     name="total_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tutar *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.amount')} *</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" min="0" {...field} />
                         </FormControl>
@@ -331,7 +360,7 @@ export function EntitlementDetailDrawer({
                     name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Durum</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.status')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -369,7 +398,7 @@ export function EntitlementDetailDrawer({
                   {updateMutation.isPending && (
                     <LoaderCircleIcon className="me-1 size-4 animate-spin" />
                   )}
-                  {updateMutation.isPending ? 'Kaydediliyor...' : t('common.buttons.save')}
+                  {updateMutation.isPending ? t('pages.projectTabs.common.saving') : t('common.buttons.save')}
                 </Button>
               </SheetFooter>
             </form>

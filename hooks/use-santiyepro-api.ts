@@ -932,3 +932,86 @@ export function useUpdatePersonnel(): UseMutationResult<
     },
   });
 }
+
+// ============================================
+// TOPLU İŞLEMLER — Sprint 8.5
+// ============================================
+
+/**
+ * Birden fazla transaction'ı toplu güncelleme (örn. is_paid: true).
+ * `api.patch` paralel olarak tetiklenir; ilk hata reject edilir.
+ * Caller rollback stratejisini kendisi yönetir.
+ */
+export function useBulkUpdateTransactions(): UseMutationResult<
+  Array<{ id: string; is_paid: boolean }>,
+  Error,
+  Array<{ id: string; is_paid: boolean }>
+> {
+  return useMutation<
+    Array<{ id: string; is_paid: boolean }>,
+    Error,
+    Array<{ id: string; is_paid: boolean }>
+  >({
+    mutationFn: async (items) => {
+      const results = await Promise.all(
+        items.map((item) =>
+          api
+            .patch<{ data: Transaction }>(`/transactions/${item.id}`, {
+              is_paid: item.is_paid,
+            })
+            .then(() => item),
+        ),
+      );
+      return results;
+    },
+  });
+}
+
+/**
+ * Birden fazla transaction'ı soft-delete et.
+ * Laravel: DELETE /api/transactions/{id}
+ */
+export function useBulkDeleteTransactions(): UseMutationResult<
+  string[],
+  Error,
+  string[]
+> {
+  return useMutation<string[], Error, string[]>({
+    mutationFn: async (ids) => {
+      await Promise.all(
+        ids.map((id) => api.delete(`/transactions/${id}`)),
+      );
+      return ids;
+    },
+  });
+}
+
+// ============================================
+// PERSONEL ATAMA — Sprint 8.5
+// ============================================
+
+/**
+ * Personel proje ataması (assignment) güncelleme.
+ * Backend PATCH rotası mevcut değilse PATCH /api/personnel/{id} fallback
+ * (maaş alanları global kabul edilir).
+ */
+export function useUpdatePersonnelAssignment(): UseMutationResult<
+  { data: Personnel },
+  Error,
+  { id: string; data: Record<string, unknown> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    { data: Personnel },
+    Error,
+    { id: string; data: Record<string, unknown> }
+  >({
+    mutationFn: ({ id, data }) =>
+      api.patch<{ data: Personnel }>(`/personnel/${id}`, data),
+    onSuccess: (_resp, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['personnel-detail', id] });
+      void queryClient.invalidateQueries({ queryKey: ['personnel'] });
+      void queryClient.invalidateQueries({ queryKey: ['project-personnel'] });
+    },
+  });
+}

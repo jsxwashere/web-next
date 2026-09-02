@@ -1,10 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   AlertTriangle,
   Banknote,
   Calendar,
+  Check,
   CheckCircle2,
   Download,
   Plus,
@@ -18,9 +21,13 @@ import { Container } from '@/components/common/container';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProjectCollections } from '@/hooks/use-santiyepro-api';
+import {
+  useBulkUpdateTransactions,
+  useProjectCollections,
+} from '@/hooks/use-santiyepro-api';
 import type { Collection } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
@@ -75,7 +82,9 @@ function getCollectionStatus(c: Collection): StatusFilter {
 
 export function TahsilatlarContent({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const collectionsQuery = useProjectCollections(projectId);
+  const bulkUpdate = useBulkUpdateTransactions();
 
   const collections = useMemo<Collection[]>(
     () => collectionsQuery.data?.data ?? [],
@@ -86,6 +95,43 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [openNew, setOpenNew] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkMarkPaid = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      await bulkUpdate.mutateAsync(
+        ids.map((id) => ({ id, is_paid: true })),
+      );
+      toast.success(
+        t('pages.projectTabs.tahsilatlar.bulkActions.selectedCount', {
+          count: selectedIds.size,
+        }),
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ['project-collections', projectId],
+      });
+      clearSelection();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Toplu işlem başarısız';
+      toast.error(message);
+    }
+  };
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -234,6 +280,36 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
             </Button>
           </div>
         </div>
+
+        {/* Bulk actions bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-2 text-xs">
+            <span className="font-medium text-primary">
+              {t('pages.projectTabs.tahsilatlar.bulkActions.selectedCount', {
+                count: selectedIds.size,
+              })}
+            </span>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={handleBulkMarkPaid}
+              disabled={bulkUpdate.isPending}
+            >
+              <Check className="me-1 size-4" />
+              {bulkUpdate.isPending
+                ? t('pages.projectTabs.tahsilatlar.bulkActions.inProgress')
+                : t('pages.projectTabs.tahsilatlar.bulkActions.markAsPaid')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={clearSelection}
+              disabled={bulkUpdate.isPending}
+            >
+              {t('pages.projectTabs.tahsilatlar.bulkActions.clearSelection')}
+            </Button>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -459,6 +535,29 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
                   }}
                   className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelect(collection.id);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleSelect(collection.id);
+                      }
+                    }}
+                    role="checkbox"
+                    aria-checked={selectedIds.has(collection.id)}
+                    tabIndex={0}
+                    className="shrink-0"
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(collection.id)}
+                      onCheckedChange={() => toggleSelect(collection.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
                   <div className="grid size-9 shrink-0 place-items-center rounded-md bg-emerald-500/10">
                     <Banknote className="size-4 text-emerald-500" />
                   </div>

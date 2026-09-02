@@ -7,6 +7,7 @@ import {
   Phone,
   Plus,
   Search,
+  Settings,
   Users,
   X as XIcon,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { formatAmount, getInitials, storageUrl, todayStr } from '@/lib/helpers';
 import { NewPersonnelSheet } from './_components/new-personnel-sheet';
 import { PersonnelDetailDrawer } from './_components/personnel-detail-drawer';
+import { AssignmentDrawer } from './_components/assignment-drawer';
 
 /**
  * Sprint 8.3b — Personel (project-scoped) — ŞantiyePro tasarımına uyarlandı.
@@ -116,6 +118,7 @@ export function PersonelContent({ projectId }: { projectId: string }) {
   const [statusFilter, setStatusFilter] = useState<'all' | PersonnelStatus>('all');
   const [salaryTypeFilter, setSalaryTypeFilter] = useState<'all' | SalaryTypeKey>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [assignmentId, setAssignmentId] = useState<string | null>(null);
 
   const activeCount = useMemo(
     () => personnel.filter((p) => p.status === PersonnelStatus.ACTIVE).length,
@@ -234,6 +237,23 @@ export function PersonelContent({ projectId }: { projectId: string }) {
             {t('pages.projectTabs.personel.addPersonnel')}
           </Button>
         </div>
+
+        {/* Selected personnel toolbar — assignment action */}
+        {selectedId && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-2 text-xs">
+            <span className="font-medium text-primary">
+              {filtered.find((p) => p.id === selectedId)?.name ?? ''}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAssignmentId(selectedId)}
+            >
+              <Settings className="me-1 size-4" />
+              {t('pages.projectTabs.personel.assignment.manageAssignment')}
+            </Button>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -558,6 +578,14 @@ export function PersonelContent({ projectId }: { projectId: string }) {
           if (!o) setSelectedId(null);
         }}
         personnelId={selectedId}
+      />
+
+      <AssignmentDrawer
+        open={Boolean(assignmentId)}
+        onOpenChange={(o) => {
+          if (!o) setAssignmentId(null);
+        }}
+        personnelId={assignmentId}
       />
     </Container>
   );

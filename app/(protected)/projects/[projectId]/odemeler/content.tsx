@@ -1,17 +1,21 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   Calendar,
+  Check,
   CheckCircle2,
   Clock,
   CreditCard,
   Download,
   Plus,
   Search,
+  Trash2,
   X as XIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -20,9 +24,14 @@ import { Container } from '@/components/common/container';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProjectTransactions } from '@/hooks/use-santiyepro-api';
+import {
+  useBulkDeleteTransactions,
+  useBulkUpdateTransactions,
+  useProjectTransactions,
+} from '@/hooks/use-santiyepro-api';
 import type { Transaction } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
@@ -95,11 +104,75 @@ function getPaymentStatus(item: Transaction): {
 
 export function OdemelerContent({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const bulkUpdate = useBulkUpdateTransactions();
+  const bulkDelete = useBulkDeleteTransactions();
   const [searchText, setSearchText] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [openNew, setOpenNew] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkMarkPaid = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      await bulkUpdate.mutateAsync(
+        ids.map((id) => ({ id, is_paid: true })),
+      );
+      toast.success(
+        t('pages.projectTabs.odemeler.bulkActions.selectedCount', {
+          count: selectedIds.size,
+        }),
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ['project-transactions', projectId],
+      });
+      clearSelection();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Toplu işlem başarısız';
+      toast.error(message);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!window.confirm(
+      t('pages.projectTabs.odemeler.bulkActions.confirmDelete', { count }),
+    )) {
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    try {
+      await bulkDelete.mutateAsync(ids);
+      toast.success(
+        t('pages.projectTabs.common.deleted', { count }),
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ['project-transactions', projectId],
+      });
+      clearSelection();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('pages.projectTabs.common.deleteError');
+      toast.error(message);
+    }
+  };
 
   const transactionsQuery = useProjectTransactions(projectId, {
     search: searchText || undefined,
@@ -245,6 +318,45 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
             </Button>
           </div>
         </div>
+
+        {/* Bulk actions bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-2 text-xs">
+            <span className="font-medium text-primary">
+              {t('pages.projectTabs.odemeler.bulkActions.selectedCount', {
+                count: selectedIds.size,
+              })}
+            </span>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={handleBulkMarkPaid}
+              disabled={bulkUpdate.isPending || bulkDelete.isPending}
+            >
+              <Check className="me-1 size-4" />
+              {bulkUpdate.isPending
+                ? t('pages.projectTabs.odemeler.bulkActions.inProgress')
+                : t('pages.projectTabs.odemeler.bulkActions.markAsPaid')}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={bulkUpdate.isPending || bulkDelete.isPending}
+            >
+              <Trash2 className="me-1 size-4" />
+              {t('pages.projectTabs.odemeler.bulkActions.softDelete')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={clearSelection}
+              disabled={bulkUpdate.isPending || bulkDelete.isPending}
+            >
+              {t('pages.projectTabs.odemeler.bulkActions.clearSelection')}
+            </Button>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -496,6 +608,29 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
                   }}
                   className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelect(tx.id);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleSelect(tx.id);
+                      }
+                    }}
+                    role="checkbox"
+                    aria-checked={selectedIds.has(tx.id)}
+                    tabIndex={0}
+                    className="shrink-0"
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(tx.id)}
+                      onCheckedChange={() => toggleSelect(tx.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
                   <div
                     className={cn(
                       'grid size-9 shrink-0 place-items-center rounded-md',

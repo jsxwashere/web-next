@@ -13,6 +13,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Banknote, Calendar, LoaderCircleIcon, Pencil, X as XIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -54,6 +55,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  optimisticUpdate,
+  snapshotQuery,
+} from '@/lib/api/optimistic';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 
 const CURRENCY_OPTIONS = [
@@ -63,10 +68,11 @@ const CURRENCY_OPTIONS = [
   { value: 'GBP', label: 'GBP' },
 ];
 
+// STATUS_OPTIONS labels come from i18n in render; keep values canonical.
 const STATUS_OPTIONS = [
-  { value: 'received', label: 'Tahsil Edildi' },
-  { value: 'pending', label: 'Beklemede' },
-];
+  { value: 'received' },
+  { value: 'pending' },
+] as const;
 
 const collectionSchema = z.object({
   amount: z.coerce.number().positive('Tutar 0\'dan büyük olmalı'),
@@ -108,6 +114,7 @@ export function CollectionDetailDrawer({
   transactionId,
 }: CollectionDetailDrawerProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: resp, isLoading, error } = useGetTransaction(transactionId);
   const updateMutation = useUpdateTransaction();
   const item = resp?.data;
@@ -145,7 +152,30 @@ export function CollectionDetailDrawer({
 
   const onSubmit = form.handleSubmit(async (data) => {
     if (!transactionId) return;
+    const detailKey = ['transaction', transactionId] as const;
+    const snapshot = snapshotQuery<{ data: typeof item }>(queryClient, detailKey);
+
     try {
+      optimisticUpdate<{ data: typeof item }>(queryClient, detailKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data
+            ? {
+                ...old.data,
+                amount: data.amount,
+                currency: data.currency,
+                payment_type: data.payment_type,
+                date: data.date || null,
+                due_date: data.due_date || null,
+                contract_id: data.contract_id || null,
+                description: data.description || null,
+                is_paid: data.status === 'received',
+              }
+            : old.data,
+        };
+      });
+
       await updateMutation.mutateAsync({
         id: transactionId,
         data: {
@@ -159,15 +189,18 @@ export function CollectionDetailDrawer({
           is_paid: data.status === 'received',
         },
       });
-      toast.success('Tahsilat güncellendi');
+      toast.success(t('pages.projectTabs.common.saved'));
       onOpenChange(false);
     } catch (err) {
+      if (snapshot) {
+        queryClient.setQueryData(detailKey, snapshot);
+      }
       const message =
         err instanceof ApiError
           ? (err.payload as { message?: string })?.message ?? err.message
           : err instanceof Error
             ? err.message
-            : 'Tahsilat güncellenemedi';
+            : t('pages.projectTabs.common.saveError');
       toast.error(message);
     }
   });
@@ -190,7 +223,9 @@ export function CollectionDetailDrawer({
               <div className="grid size-8 place-items-center rounded-md bg-emerald-500/10">
                 <Banknote className="size-4 text-emerald-600" />
               </div>
-              <SheetTitle>Tahsilat Detayı</SheetTitle>
+              <SheetTitle>
+                {t('pages.projectTabs.tahsilatlar.detailDrawer.title')}
+              </SheetTitle>
             </div>
             <Button
               type="button"
@@ -215,7 +250,7 @@ export function CollectionDetailDrawer({
         ) : error || !item ? (
           <SheetBody>
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-              Tahsilat yüklenemedi.
+              {t('pages.projectTabs.tahsilatlar.detailDrawer.loadError')}
             </div>
           </SheetBody>
         ) : (
@@ -227,7 +262,9 @@ export function CollectionDetailDrawer({
               <SheetBody className="flex-1 space-y-4 overflow-y-auto">
                 {/* Özet */}
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
-                  <p className="text-xs text-muted-foreground">Tutar</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('pages.projectTabs.common.amount')}
+                  </p>
                   <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                     +{formatAmount(item.amount, item.currency ?? 'TRY')}
                   </p>
@@ -242,7 +279,9 @@ export function CollectionDetailDrawer({
                       variant={item.is_paid ? 'success' : 'warning'}
                       className="h-4 px-1.5 text-[10px]"
                     >
-                      {item.is_paid ? 'Tahsil Edildi' : 'Beklemede'}
+                      {item.is_paid
+                        ? t('pages.projectTabs.tahsilatlar.detailDrawer.markReceived')
+                        : t('pages.projectTabs.tahsilatlar.detailDrawer.markPending')}
                     </Badge>
                   </div>
                 </div>
@@ -253,15 +292,15 @@ export function CollectionDetailDrawer({
                 <div className="space-y-3">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                     <Pencil className="size-3" />
-                    Salt Okunur Bilgiler
+                    {t('pages.projectTabs.common.readOnlyInfo')}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <FieldRow label="ID">{item.id}</FieldRow>
-                    <FieldRow label="Ödeme Tipi">{paymentTypeLabel}</FieldRow>
-                    <FieldRow label="Ödeme Kaynağı">
+                    <FieldRow label={t('pages.projectTabs.common.paymentType')}>{paymentTypeLabel}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.common.paymentSource')}>
                       {item.payment_source_name ?? '—'}
                     </FieldRow>
-                    <FieldRow label="Sözleşme">
+                    <FieldRow label={t('pages.projectTabs.common.contract')}>
                       {item.contract_name ?? '—'}
                     </FieldRow>
                   </div>
@@ -272,7 +311,7 @@ export function CollectionDetailDrawer({
                 {/* Edit alanları */}
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Düzenlenebilir Alanlar
+                    {t('pages.projectTabs.common.editableFields')}
                   </p>
 
                   <FormField
@@ -280,7 +319,7 @@ export function CollectionDetailDrawer({
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tutar *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.amount')} *</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -300,7 +339,7 @@ export function CollectionDetailDrawer({
                       name="currency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Para Birimi</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.common.currency')}</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
@@ -328,7 +367,7 @@ export function CollectionDetailDrawer({
                       name="payment_type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ödeme Tipi</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.common.paymentType')}</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
@@ -358,7 +397,7 @@ export function CollectionDetailDrawer({
                       name="date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tahsil Tarihi *</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newCollection.paymentDate')} *</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} value={field.value ?? ''} />
                           </FormControl>
@@ -372,7 +411,7 @@ export function CollectionDetailDrawer({
                       name="due_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Vade Tarihi</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newCollection.dueDate')}</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
@@ -391,10 +430,10 @@ export function CollectionDetailDrawer({
                     name="contract_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Sözleşme ID</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.contractId')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Sözleşme ID (opsiyonel)"
+                            placeholder={t('pages.projectTabs.common.contractId')}
                             {...field}
                             value={field.value ?? ''}
                           />
@@ -409,10 +448,10 @@ export function CollectionDetailDrawer({
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Açıklama</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.description')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Tahsilat açıklaması"
+                            placeholder={t('pages.projectTabs.forms.newCollection.descriptionPlaceholder')}
                             {...field}
                             value={field.value ?? ''}
                           />
@@ -427,7 +466,7 @@ export function CollectionDetailDrawer({
                     name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Durum</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.common.status')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -440,7 +479,9 @@ export function CollectionDetailDrawer({
                           <SelectContent>
                             {STATUS_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
+                                {opt.value === 'received'
+                                  ? t('pages.projectTabs.tahsilatlar.detailDrawer.markReceived')
+                                  : t('pages.projectTabs.tahsilatlar.detailDrawer.markPending')}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -465,7 +506,7 @@ export function CollectionDetailDrawer({
                   {updateMutation.isPending && (
                     <LoaderCircleIcon className="me-1 size-4 animate-spin" />
                   )}
-                  {updateMutation.isPending ? 'Kaydediliyor...' : t('common.buttons.save')}
+                  {updateMutation.isPending ? t('pages.projectTabs.common.saving') : t('common.buttons.save')}
                 </Button>
               </SheetFooter>
             </form>

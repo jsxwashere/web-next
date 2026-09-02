@@ -322,6 +322,31 @@
     }
   },
   "projectTabs": {
+    "common": {
+      "readOnlyInfo": "Read-Only Info",
+      "editableFields": "Editable Fields",
+      "saving": "Saving...",
+      "noSelection": "No items selected",
+      "amount": "Amount",
+      "currency": "Currency",
+      "status": "Status",
+      "paymentType": "Payment Type",
+      "description": "Description",
+      "contract": "Contract",
+      "firm": "Firm",
+      "employee": "Personnel",
+      "supplier": "Supplier",
+      "unit": "Unit",
+      "paymentSource": "Payment Source",
+      "projectId": "Project ID",
+      "contractId": "Contract ID",
+      "categoryId": "Category",
+      "saved": "Updated",
+      "saveError": "Update failed",
+      "deleted": "Deleted",
+      "deleteError": "Delete failed",
+      "bulkPartial": "{success}/{total} records updated"
+    },
     "tahsilatlar": {
       "title": "Collections",
       "subtitle": "Collections and income records for this project.",
@@ -343,7 +368,20 @@
       "dateRange": "Date Range",
       "overdueAlert": "{count} overdue collections — total {amount}",
       "overdueEmpty": "All collections are on time.",
-      "exportCsv": "Export CSV"
+      "exportCsv": "Export CSV",
+      "detailDrawer": {
+        "title": "Collection Detail",
+        "loadError": "Collection could not be loaded.",
+        "markReceived": "Received",
+        "markPending": "Pending"
+      },
+      "bulkActions": {
+        "selectedCount": "Selected: {count}",
+        "markAsPaid": "Mark selected as paid",
+        "clearSelection": "Clear selection",
+        "inProgress": "Processing...",
+        "noSelection": "No payments selected yet"
+      }
     },
     "odemeler": {
       "title": "Payments",
@@ -375,7 +413,20 @@
       "exportCsv": "Export CSV",
       "firm": "Firm",
       "personnel": "Personnel",
-      "paymentSource": "Payment Source"
+      "paymentSource": "Payment Source",
+      "detailDrawer": {
+        "title": "Payment Detail",
+        "loadError": "Payment could not be loaded."
+      },
+      "bulkActions": {
+        "selectedCount": "Selected: {count}",
+        "markAsPaid": "Mark selected as paid",
+        "softDelete": "Delete selected payments",
+        "clearSelection": "Clear selection",
+        "inProgress": "Processing...",
+        "noSelection": "No payments selected yet",
+        "confirmDelete": "Are you sure you want to delete {count} selected payments?"
+      }
     },
     "sozlesmeler": {
       "title": "Contracts",
@@ -396,7 +447,12 @@
       "progress": "Progress",
       "paidOf": "{paid} / {total}",
       "firm": "Firm",
-      "dateRange": "Date Range"
+      "dateRange": "Date Range",
+      "detailDrawer": {
+        "title": "Contract Detail",
+        "loadError": "Contract could not be loaded.",
+        "items": "Contract Items ({count})"
+      }
     },
     "personel": {
       "title": "Personnel",
@@ -427,7 +483,28 @@
       "activate": "Activate",
       "wagePerDay": "/ Day",
       "wagePerWeek": "/ Week",
-      "wagePerMonth": "/ Month"
+      "wagePerMonth": "/ Month",
+      "detailDrawer": {
+        "title": "Personnel Detail",
+        "loadError": "Personnel could not be loaded."
+      },
+      "assignment": {
+        "manageAssignment": "Manage Assignment",
+        "title": "Personnel Assignment Management",
+        "readOnly": "Personnel Info",
+        "edit": "Edit Assignment",
+        "salaryType": "Salary Type",
+        "dailyWage": "Daily Wage",
+        "weeklySalary": "Weekly Salary",
+        "monthlySalary": "Monthly Salary",
+        "currency": "Currency",
+        "startDate": "Assignment Start",
+        "endDate": "Assignment End",
+        "isActive": "Active Assignment",
+        "saved": "Assignment updated",
+        "saveError": "Assignment update failed",
+        "loadError": "Assignment could not be loaded"
+      }
     },
     "firmalar": {
       "title": "Firms",
@@ -466,7 +543,11 @@
       "supplier": "Supplier",
       "contract": "Contract",
       "ticket": "Waybill No",
-      "return": "Return"
+      "return": "Return",
+      "detailDrawer": {
+        "title": "Material Detail",
+        "loadError": "Material could not be loaded."
+      }
     },
     "hakedis": {
       "title": "Progress Payments",
@@ -485,7 +566,12 @@
       "all": "All",
       "period": "Period",
       "allFirms": "All Firms",
-      "items": "items"
+      "items": "items",
+      "detailDrawer": {
+        "title": "Entitlement Detail",
+        "loadError": "Entitlement could not be loaded.",
+        "items": "Entitlement Items ({count})"
+      }
     },
     "raporlar": {
       "title": "Site Reports",

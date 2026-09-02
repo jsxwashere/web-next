@@ -17,6 +17,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LoaderCircleIcon,
   Phone,
@@ -71,6 +72,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  optimisticUpdate,
+  snapshotQuery,
+} from '@/lib/api/optimistic';
 import { formatAmount } from '@/lib/helpers';
 
 const STATUS_OPTIONS: { value: PersonnelStatusKey; label: string }[] = [
@@ -137,6 +142,7 @@ export function PersonnelDetailDrawer({
   personnelId,
 }: PersonnelDetailDrawerProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: resp, isLoading, error } = useGetPersonnel(personnelId);
   const updateMutation = useUpdatePersonnel();
   const item = resp?.data;
@@ -165,7 +171,26 @@ export function PersonnelDetailDrawer({
 
   const onSubmit = form.handleSubmit(async (data) => {
     if (!personnelId) return;
+    const detailKey = ['personnel-detail', personnelId] as const;
+    const snapshot = snapshotQuery<{ data: typeof item }>(queryClient, detailKey);
+
     try {
+      optimisticUpdate<{ data: typeof item }>(queryClient, detailKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data
+            ? {
+                ...old.data,
+                name: data.name,
+                role: data.role,
+                phone: data.phone || null,
+                status: data.status,
+              }
+            : old.data,
+        };
+      });
+
       await updateMutation.mutateAsync({
         id: personnelId,
         data: {
@@ -175,15 +200,18 @@ export function PersonnelDetailDrawer({
           status: data.status,
         },
       });
-      toast.success('Personel güncellendi');
+      toast.success(t('pages.projectTabs.common.saved'));
       onOpenChange(false);
     } catch (err) {
+      if (snapshot) {
+        queryClient.setQueryData(detailKey, snapshot);
+      }
       const message =
         err instanceof ApiError
           ? (err.payload as { message?: string })?.message ?? err.message
           : err instanceof Error
             ? err.message
-            : 'Personel güncellenemedi';
+            : t('pages.projectTabs.common.saveError');
       toast.error(message);
     }
   });
@@ -200,7 +228,9 @@ export function PersonnelDetailDrawer({
               <div className="grid size-8 place-items-center rounded-md bg-primary/10">
                 <Users className="size-4 text-primary" />
               </div>
-              <SheetTitle>Personel Detayı</SheetTitle>
+              <SheetTitle>
+                {t('pages.projectTabs.personel.detailDrawer.title')}
+              </SheetTitle>
             </div>
             <Button
               type="button"
@@ -224,7 +254,7 @@ export function PersonnelDetailDrawer({
         ) : error || !item ? (
           <SheetBody>
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-              Personel yüklenemedi.
+              {t('pages.projectTabs.personel.detailDrawer.loadError')}
             </div>
           </SheetBody>
         ) : (
@@ -284,17 +314,17 @@ export function PersonnelDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Salt Okunur Bilgiler
+                    {t('pages.projectTabs.common.readOnlyInfo')}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <FieldRow label="ID">{item.id}</FieldRow>
                     <FieldRow label="TC No">{item.tc_no ?? '—'}</FieldRow>
                     <FieldRow label="SGK No">{item.sgk_no ?? '—'}</FieldRow>
                     <FieldRow label="IBAN">{item.iban ?? '—'}</FieldRow>
-                    <FieldRow label="Doğum Tarihi">
+                    <FieldRow label={t('common.labels.date')}>
                       {item.birth_date ?? '—'}
                     </FieldRow>
-                    <FieldRow label="Özel Rol">
+                    <FieldRow label={t('common.labels.name') + ' (özel)'}>
                       {item.custom_role ?? '—'}
                     </FieldRow>
                   </div>
@@ -304,7 +334,7 @@ export function PersonnelDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Düzenlenebilir Alanlar
+                    {t('pages.projectTabs.common.editableFields')}
                   </p>
 
                   <FormField
@@ -312,9 +342,9 @@ export function PersonnelDetailDrawer({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ad Soyad *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.forms.newPersonnel.name')} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ad Soyad" {...field} />
+                          <Input placeholder={t('pages.projectTabs.forms.newPersonnel.namePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -327,14 +357,14 @@ export function PersonnelDetailDrawer({
                       name="role"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Rol *</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newPersonnel.role')} *</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value ?? ''}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Rol seçin" />
+                                <SelectValue placeholder={t('pages.projectTabs.forms.newPersonnel.rolePlaceholder')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -355,7 +385,7 @@ export function PersonnelDetailDrawer({
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Durum</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.common.status')}</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
@@ -384,10 +414,10 @@ export function PersonnelDetailDrawer({
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telefon</FormLabel>
+                        <FormLabel>{t('pages.personnel.phone')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="0555 123 45 67"
+                            placeholder={t('pages.projectTabs.forms.newPersonnel.phonePlaceholder')}
                             {...field}
                             value={field.value ?? ''}
                           />
@@ -399,11 +429,11 @@ export function PersonnelDetailDrawer({
                 </div>
 
                 <div className="rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-                  <p className="font-semibold">Not</p>
+                  <p className="font-semibold">
+                    {t('common.labels.actions')}
+                  </p>
                   <p>
-                    Maaş alanları (günlük yevmiye, haftalık/aylık maaş) proje
-                    ataması üzerinde tutulur. Maaş değişikliği için personel
-                    atama düzenleme ekranını kullanın.
+                    {t('pages.projectTabs.personel.assignment.manageAssignment')}
                   </p>
                 </div>
               </SheetBody>
@@ -421,7 +451,7 @@ export function PersonnelDetailDrawer({
                   {updateMutation.isPending && (
                     <LoaderCircleIcon className="me-1 size-4 animate-spin" />
                   )}
-                  {updateMutation.isPending ? 'Kaydediliyor...' : t('common.buttons.save')}
+                  {updateMutation.isPending ? t('pages.projectTabs.common.saving') : t('common.buttons.save')}
                 </Button>
               </SheetFooter>
             </form>

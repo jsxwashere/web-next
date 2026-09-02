@@ -11,6 +11,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { FileText, LoaderCircleIcon, X as XIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -59,6 +60,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  optimisticUpdate,
+  snapshotQuery,
+} from '@/lib/api/optimistic';
 import { formatAmount } from '@/lib/helpers';
 
 const contractSchema = z.object({
@@ -128,6 +133,7 @@ export function ContractDetailDrawer({
   contractId,
 }: ContractDetailDrawerProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: resp, isLoading, error } = useGetContract(contractId);
   const updateMutation = useUpdateContract();
   const item = resp?.data;
@@ -160,7 +166,28 @@ export function ContractDetailDrawer({
 
   const onSubmit = form.handleSubmit(async (data) => {
     if (!contractId) return;
+    const detailKey = ['contract', contractId] as const;
+    const snapshot = snapshotQuery<{ data: typeof item }>(queryClient, detailKey);
+
     try {
+      optimisticUpdate<{ data: typeof item }>(queryClient, detailKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data
+            ? {
+                ...old.data,
+                name: data.name,
+                type: data.type,
+                status: data.status,
+                total_amount: data.total_amount,
+                start_date: (data.start_date || undefined) as typeof old.data.start_date,
+                end_date: data.end_date || null,
+              }
+            : old.data,
+        };
+      });
+
       await updateMutation.mutateAsync({
         id: contractId,
         data: {
@@ -172,15 +199,18 @@ export function ContractDetailDrawer({
           end_date: data.end_date || null,
         },
       });
-      toast.success('Sözleşme güncellendi');
+      toast.success(t('pages.projectTabs.common.saved'));
       onOpenChange(false);
     } catch (err) {
+      if (snapshot) {
+        queryClient.setQueryData(detailKey, snapshot);
+      }
       const message =
         err instanceof ApiError
           ? (err.payload as { message?: string })?.message ?? err.message
           : err instanceof Error
             ? err.message
-            : 'Sözleşme güncellenemedi';
+            : t('pages.projectTabs.common.saveError');
       toast.error(message);
     }
   });
@@ -199,7 +229,9 @@ export function ContractDetailDrawer({
               <div className="grid size-8 place-items-center rounded-md bg-primary/10">
                 <FileText className="size-4 text-primary" />
               </div>
-              <SheetTitle>Sözleşme Detayı</SheetTitle>
+              <SheetTitle>
+                {t('pages.projectTabs.sozlesmeler.detailDrawer.title')}
+              </SheetTitle>
             </div>
             <Button
               type="button"
@@ -223,7 +255,7 @@ export function ContractDetailDrawer({
         ) : error || !item ? (
           <SheetBody>
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-              Sözleşme yüklenemedi.
+              {t('pages.projectTabs.sozlesmeler.detailDrawer.loadError')}
             </div>
           </SheetBody>
         ) : (
@@ -255,7 +287,7 @@ export function ContractDetailDrawer({
                   {total > 0 && (
                     <div className="mt-2 space-y-1">
                       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>İlerleme</span>
+                        <span>{t('pages.projectTabs.sozlesmeler.progress')}</span>
                         <span className="tabular-nums">
                           {progress.toFixed(0)}%
                         </span>
@@ -278,15 +310,15 @@ export function ContractDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Salt Okunur Bilgiler
+                    {t('pages.projectTabs.common.readOnlyInfo')}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <FieldRow label="ID">{item.id}</FieldRow>
-                    <FieldRow label="Firma">{item.firm?.name ?? '—'}</FieldRow>
-                    <FieldRow label="Ödenen">
+                    <FieldRow label={t('pages.projectTabs.common.firm')}>{item.firm?.name ?? '—'}</FieldRow>
+                    <FieldRow label={t('pages.projectTabs.sozlesmeler.paid')}>
                       {formatAmount(paid)}
                     </FieldRow>
-                    <FieldRow label="Kalan">
+                    <FieldRow label={t('pages.projectTabs.sozlesmeler.remaining')}>
                       {formatAmount(Math.max(0, total - paid))}
                     </FieldRow>
                   </div>
@@ -297,7 +329,7 @@ export function ContractDetailDrawer({
                     <Separator />
                     <div className="space-y-2">
                       <p className="text-xs font-semibold text-muted-foreground">
-                        Sözleşme Kalemleri ({details.length})
+                        {t('pages.projectTabs.sozlesmeler.detailDrawer.items', { count: details.length })}
                       </p>
                       <div className="rounded-md border border-border">
                         <table className="w-full text-xs">
@@ -344,7 +376,7 @@ export function ContractDetailDrawer({
 
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Düzenlenebilir Alanlar
+                    {t('pages.projectTabs.common.editableFields')}
                   </p>
 
                   <FormField
@@ -352,9 +384,9 @@ export function ContractDetailDrawer({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Sözleşme Adı *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.forms.newContract.name')} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Sözleşme adı" {...field} />
+                          <Input placeholder={t('pages.projectTabs.forms.newContract.namePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -367,7 +399,7 @@ export function ContractDetailDrawer({
                       name="type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tip</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newContract.type')}</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
@@ -395,7 +427,7 @@ export function ContractDetailDrawer({
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Durum</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.common.status')}</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
@@ -424,7 +456,7 @@ export function ContractDetailDrawer({
                     name="total_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Toplam Tutar *</FormLabel>
+                        <FormLabel>{t('pages.projectTabs.sozlesmeler.total')} *</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -444,7 +476,7 @@ export function ContractDetailDrawer({
                       name="start_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Başlangıç</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newContract.startDate')}</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
@@ -462,7 +494,7 @@ export function ContractDetailDrawer({
                       name="end_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Bitiş</FormLabel>
+                          <FormLabel>{t('pages.projectTabs.forms.newContract.endDate')}</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
@@ -491,7 +523,7 @@ export function ContractDetailDrawer({
                   {updateMutation.isPending && (
                     <LoaderCircleIcon className="me-1 size-4 animate-spin" />
                   )}
-                  {updateMutation.isPending ? 'Kaydediliyor...' : t('common.buttons.save')}
+                  {updateMutation.isPending ? t('pages.projectTabs.common.saving') : t('common.buttons.save')}
                 </Button>
               </SheetFooter>
             </form>

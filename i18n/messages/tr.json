@@ -342,7 +342,20 @@
         "dateRange": "Tarih Aralığı",
         "overdueAlert": "{count} gecikmiş tahsilat — toplam {amount}",
         "overdueEmpty": "Tüm tahsilatlar zamanında.",
-        "exportCsv": "CSV Dışa Aktar"
+        "exportCsv": "CSV Dışa Aktar",
+        "detailDrawer": {
+          "title": "Tahsilat Detayı",
+          "loadError": "Tahsilat yüklenemedi.",
+          "markReceived": "Tahsil Edildi",
+          "markPending": "Beklemede"
+        },
+        "bulkActions": {
+          "selectedCount": "Seçili: {count}",
+          "markAsPaid": "Seçili ödemeleri ödendi olarak işaretle",
+          "clearSelection": "Seçimi temizle",
+          "inProgress": "İşleniyor...",
+          "noSelection": "Henüz ödeme seçilmedi"
+        }
       },
       "odemeler": {
         "title": "Ödemeler",
@@ -374,7 +387,20 @@
         "exportCsv": "CSV Dışa Aktar",
         "firm": "Firma",
         "personnel": "Personel",
-        "paymentSource": "Ödeme Kaynağı"
+        "paymentSource": "Ödeme Kaynağı",
+        "detailDrawer": {
+          "title": "Ödeme Detayı",
+          "loadError": "Ödeme yüklenemedi."
+        },
+        "bulkActions": {
+          "selectedCount": "Seçili: {count}",
+          "markAsPaid": "Seçili ödemeleri ödendi olarak işaretle",
+          "softDelete": "Seçili ödemeleri sil",
+          "clearSelection": "Seçimi temizle",
+          "inProgress": "İşleniyor...",
+          "noSelection": "Henüz ödeme seçilmedi",
+          "confirmDelete": "Seçili {count} ödemeyi silmek istediğinizden emin misiniz?"
+        }
       },
       "sozlesmeler": {
         "title": "Sözleşmeler",
@@ -395,7 +421,12 @@
         "progress": "İlerleme",
         "paidOf": "{paid} / {total}",
         "firm": "Firma",
-        "dateRange": "Tarih Aralığı"
+        "dateRange": "Tarih Aralığı",
+        "detailDrawer": {
+          "title": "Sözleşme Detayı",
+          "loadError": "Sözleşme yüklenemedi.",
+          "items": "Sözleşme Kalemleri ({count})"
+        }
       },
       "personel": {
         "title": "Personel",
@@ -426,7 +457,28 @@
         "activate": "Aktifleştir",
         "wagePerDay": "/ Gün",
         "wagePerWeek": "/ Hafta",
-        "wagePerMonth": "/ Ay"
+        "wagePerMonth": "/ Ay",
+        "detailDrawer": {
+          "title": "Personel Detayı",
+          "loadError": "Personel yüklenemedi."
+        },
+        "assignment": {
+          "manageAssignment": "Atama Yönet",
+          "title": "Personel Atama Yönetimi",
+          "readOnly": "Personel Bilgisi",
+          "edit": "Atama Düzenle",
+          "salaryType": "Maaş Tipi",
+          "dailyWage": "Günlük Yevmiye",
+          "weeklySalary": "Haftalık Maaş",
+          "monthlySalary": "Aylık Maaş",
+          "currency": "Para Birimi",
+          "startDate": "Atama Başlangıç",
+          "endDate": "Atama Bitiş",
+          "isActive": "Aktif Atama",
+          "saved": "Atama güncellendi",
+          "saveError": "Atama güncellenemedi",
+          "loadError": "Atama yüklenemedi"
+        }
       },
       "firmalar": {
         "title": "Firmalar",
@@ -465,7 +517,11 @@
         "supplier": "Tedarikçi",
         "contract": "Sözleşme",
         "ticket": "İrsaliye No",
-        "return": "İade"
+        "return": "İade",
+        "detailDrawer": {
+          "title": "Malzeme Detayı",
+          "loadError": "Malzeme yüklenemedi."
+        }
       },
       "hakedis": {
         "title": "Hakediş",
@@ -484,7 +540,12 @@
         "all": "Tümü",
         "period": "Dönem",
         "allFirms": "Tüm Firmalar",
-        "items": "kalem"
+        "items": "kalem",
+        "detailDrawer": {
+          "title": "Hakediş Detayı",
+          "loadError": "Hakediş yüklenemedi.",
+          "items": "Hakediş Kalemleri ({count})"
+        }
       },
       "raporlar": {
         "title": "Saha Raporları",
@@ -519,6 +580,31 @@
         "newPayment": "Yeni Ödeme",
         "loading": "Yükleniyor...",
         "projectNotFound": "Proje bulunamadı"
+      },
+      "common": {
+        "readOnlyInfo": "Salt Okunur Bilgiler",
+        "editableFields": "Düzenlenebilir Alanlar",
+        "saving": "Kaydediliyor...",
+        "noSelection": "Öğe seçin",
+        "amount": "Tutar",
+        "currency": "Para Birimi",
+        "status": "Durum",
+        "paymentType": "Ödeme Tipi",
+        "description": "Açıklama",
+        "contract": "Sözleşme",
+        "firm": "Firma",
+        "employee": "Personel",
+        "supplier": "Tedarikçi",
+        "unit": "Birim",
+        "paymentSource": "Ödeme Kaynağı",
+        "projectId": "Proje ID",
+        "contractId": "Sözleşme ID",
+        "categoryId": "Kategori",
+        "saved": "Güncellendi",
+        "saveError": "Güncellenemedi",
+        "deleted": "Silindi",
+        "deleteError": "Silinemedi",
+        "bulkPartial": "{success}/{total} kayıt güncellendi"
       },
       "cizimler": {
         "title": "Çizimler",
