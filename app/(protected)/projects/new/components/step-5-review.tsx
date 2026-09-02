@@ -106,7 +106,10 @@ export function ReviewStep({ values }: ReviewStepProps) {
                 >
                   <span className="font-medium">{b.name || '—'}</span>
                   <span className="tabular-nums text-xs text-muted-foreground">
-                    {apt} daire{off > 0 ? `, ${off} ofis` : ''}
+                    {t('pages.projects.wizard.fields.unitsApartmentLine', { count: apt })}
+                    {off > 0
+                      ? `, ${t('pages.projects.wizard.fields.unitsOfficeLine', { count: off })}`
+                      : ''}
                   </span>
                 </div>
               );
@@ -126,7 +129,7 @@ export function ReviewStep({ values }: ReviewStepProps) {
       {/* Financials */}
       <section className="flex flex-col gap-3">
         <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-          Finansal
+          {t('pages.projects.wizard.fields.reviewFinancial')}
         </h3>
         <div className="grid grid-cols-1 gap-3 rounded-lg border border-border bg-card p-4 text-sm sm:grid-cols-2">
           <Field

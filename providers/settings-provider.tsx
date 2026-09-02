@@ -1,7 +1,5 @@
 'use client';
-'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, {
   createContext,
   useCallback,
@@ -16,9 +14,9 @@ import { Settings } from '@/config/types';
 type Path = string;
 
 type SettingsContextType = {
-  getOption: <T = any>(path: Path) => T;
-  setOption: <T = any>(path: Path, value: T) => void;
-  storeOption: <T = any>(path: Path, value: T) => void;
+  getOption: <T = unknown>(path: Path) => T;
+  setOption: <T = unknown>(path: Path, value: T) => void;
+  storeOption: <T = unknown>(path: Path, value: T) => void;
   settings: Settings;
 };
 
@@ -31,16 +29,40 @@ const LOCAL_STORAGE_PREFIX = 'app_settings_';
 // Utility to safely access localStorage
 const isBrowser = () => typeof window !== 'undefined';
 
-function getFromPath(obj: any, path: string): any {
-  return path.split('.').reduce((acc, part) => acc?.[part], obj);
+// Type guard: narrow an unknown to a plain object so we can walk its keys.
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function setToPath(obj: any, path: string, value: any): Settings {
+function getFromPath(obj: unknown, path: string): unknown {
+  return path.split('.').reduce<unknown>((acc, part) => {
+    if (isRecord(acc)) {
+      return acc[part];
+    }
+    return undefined;
+  }, obj);
+}
+
+function setToPath(obj: Settings, path: string, value: unknown): Settings {
   const keys = path.split('.');
-  const lastKey = keys.pop()!;
-  const lastObj = keys.reduce((acc, key) => (acc[key] ??= {}), obj);
-  lastObj[lastKey] = value;
-  return { ...obj };
+  const lastKey = keys.pop();
+  if (!lastKey) return obj;
+
+  // Walk the dotted path inside a mutable clone.
+  const root = { ...(obj as unknown as Record<string, unknown>) } as Record<string, unknown>;
+  let cursor = root;
+  for (const key of keys) {
+    const next = cursor[key];
+    if (isRecord(next)) {
+      // Detach from the original to keep this branch mutable.
+      cursor[key] = { ...next };
+    } else {
+      cursor[key] = {};
+    }
+    cursor = cursor[key] as Record<string, unknown>;
+  }
+  cursor[lastKey] = value;
+  return root as unknown as Settings;
 }
 
 function storeLeaf(path: string, value: unknown) {
@@ -55,7 +77,7 @@ function storeLeaf(path: string, value: unknown) {
   }
 }
 
-function getLeafFromStorage(path: string): any {
+function getLeafFromStorage(path: string): unknown {
   if (!isBrowser()) return undefined;
   try {
     const item = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${path}`);
@@ -98,12 +120,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const setOption = useCallback(<T,>(path: string, value: T) => {
-    setSettings((prev) => setToPath({ ...prev }, path, value));
+    setSettings((prev) => setToPath(prev, path, value));
   }, []);
 
   const storeOption = useCallback(<T,>(path: string, value: T) => {
     setSettings((prev) => {
-      const newSettings = setToPath({ ...prev }, path, value);
+      const newSettings = setToPath(prev, path, value);
       storeLeaf(path, value);
       return newSettings;
     });

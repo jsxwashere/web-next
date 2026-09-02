@@ -48,7 +48,13 @@ function I18nProvider({ children }: I18nProviderProps) {
           load: 'currentOnly',
           debug: process.env.NODE_ENV === 'development',
 
+          // Use i18next v4 compatibility so the plural resolution
+          // algorithm recognises `_one` / `_other` suffixes (needed
+          // for languages like English, Turkish).
+          compatibilityJSON: 'v4',
           interpolation: {
+            prefix: '{{',
+            suffix: '}}',
             escapeValue: false, // React already does escaping
           },
 

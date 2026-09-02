@@ -23,6 +23,7 @@ import {
   type ReceiptStatus as ReceiptStatusKey,
 } from '@/lib/enums';
 import { formatAmount, formatDateTr, getEnumLabel, storageUrl } from '@/lib/helpers';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { ReceiptItem } from '@/lib/api/types';
 
 export interface ReceiptCardProps {
@@ -42,6 +43,7 @@ export function ReceiptCard({
   onReRead,
   onDelete,
 }: ReceiptCardProps) {
+  const { t } = useTranslation();
   const s = item.suggestion ?? {};
   const amount = Number(s.amount ?? s.amount_try ?? 0);
   const isReviewable =
@@ -111,7 +113,7 @@ export function ReceiptCard({
             size="sm"
             onClick={() => onReview(item)}
           >
-            İncele
+            {t('pages.receipts.review')}
           </Button>
         )}
         {canReRead && (
@@ -122,7 +124,7 @@ export function ReceiptCard({
             disabled={rereading || deleting}
           >
             <RefreshCw className="me-1 size-4" />
-            {rereading ? 'Okunuyor…' : 'Yeniden Oku'}
+            {rereading ? t('pages.receipts.rereading') : t('pages.receipts.reread')}
           </Button>
         )}
         <Button

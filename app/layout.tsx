@@ -10,6 +10,7 @@ import { I18nProvider } from '@/providers/i18n-provider';
 import { ModulesProvider } from '@/providers/modules-provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
+import { DEFAULT_LANGUAGE_CODE } from '@/i18n/config';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,13 +30,26 @@ export default async function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html className="h-full" suppressHydrationWarning>
+    <html
+      lang={DEFAULT_LANGUAGE_CODE}
+      className="h-full"
+      suppressHydrationWarning
+    >
       <body
         className={cn(
           'antialiased flex h-full text-base text-foreground bg-background',
           inter.className,
         )}
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:z-50 focus:absolute focus:top-2 focus:left-2 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground focus:shadow focus:outline-none"
+        >
+          {/* The I18nProvider will re-render the skip-to-content text after
+              hydration with the active language. The default string matches
+              the DEFAULT_LANGUAGE_CODE (tr) above. */}
+          İçeriğe Atla
+        </a>
         <QueryProvider>
           <AuthProvider>
             <SettingsProvider>
@@ -43,7 +57,9 @@ export default async function RootLayout({
                 <I18nProvider>
                   <TooltipsProvider>
                     <ModulesProvider>
-                      <Suspense>{children}</Suspense>
+                      <main id="main-content" className="flex-1">
+                        <Suspense>{children}</Suspense>
+                      </main>
                       <Toaster />
                     </ModulesProvider>
                   </TooltipsProvider>
