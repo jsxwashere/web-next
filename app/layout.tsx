@@ -36,7 +36,7 @@ export default async function RootLayout({
     >
       <body
         className={cn(
-          'antialiased flex h-full text-base text-foreground bg-background',
+          'antialiased flex h-full flex-col text-base text-foreground bg-background',
           inter.className,
         )}
       >

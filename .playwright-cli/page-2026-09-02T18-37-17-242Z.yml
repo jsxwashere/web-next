@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - link "İçeriğe Atla" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e8]:
+        - heading "auth.signin.title" [level=1] [ref=e10]
+        - alert [ref=e11]:
+          - generic [ref=e15]: auth.signin.demoNotice
+        - button "auth.signin.googleSignin" [ref=e17] [cursor=pointer]
+        - generic [ref=e23]: auth.signin.or
+        - generic [ref=e28]:
+          - generic [ref=e29]: auth.signin.email
+          - textbox "auth.signin.email" [ref=e30]:
+            - /placeholder: auth.signin.emailPlaceholder
+            - text: demo@kt.com
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - generic [ref=e33]: auth.signin.password
+            - link "auth.signin.forgotPassword" [ref=e34] [cursor=pointer]:
+              - /url: /reset-password
+          - generic [ref=e35]:
+            - textbox "auth.signin.password" [ref=e36]:
+              - /placeholder: auth.signin.passwordPlaceholder
+              - text: demo123
+            - button "auth.signin.showPassword" [ref=e37] [cursor=pointer]
+        - generic [ref=e41]:
+          - checkbox "auth.signin.rememberMe" [ref=e42]
+          - checkbox
+          - generic [ref=e43]: auth.signin.rememberMe
+        - button "auth.signin.submit" [ref=e45] [cursor=pointer]
+        - paragraph [ref=e46]:
+          - text: auth.signin.signup
+          - link "auth.signin.signupLink" [ref=e47] [cursor=pointer]:
+            - /url: /signup
+      - generic [ref=e49]:
+        - link [ref=e50] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e51]:
+          - heading "Secure Dashboard Access" [level=3] [ref=e52]
+          - generic [ref=e53]: A robust authentication gateway ensuring secure efficient user access to the Metronic Dashboard interface.
+  - region "Notifications alt+T"
+  - alert [ref=e54]

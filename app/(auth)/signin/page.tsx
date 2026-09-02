@@ -22,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { LoaderCircleIcon } from 'lucide-react';
 import { Icons } from '@/components/common/icons';
+import { Trans } from 'react-i18next';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getSigninSchema, SigninSchemaType } from '../forms/signin-schema';
 
@@ -96,10 +97,11 @@ export default function Page() {
             <RiErrorWarningFill className="text-primary" />
           </AlertIcon>
           <AlertTitle className="text-accent-foreground">
-            {t('auth.signin.demoNotice', {
-              email: t('auth.signin.demoNoticeEmail'),
-              password: t('auth.signin.demoNoticePassword'),
-            })}
+            <Trans
+              i18nKey="auth.signin.demoNotice"
+              values={{ email: t('auth.signin.demoNoticeEmail'), password: t('auth.signin.demoNoticePassword') }}
+              components={{ 0: <strong />, 2: <strong /> }}
+            />
           </AlertTitle>
         </Alert>
 

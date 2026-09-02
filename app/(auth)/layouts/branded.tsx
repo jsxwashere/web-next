@@ -16,7 +16,7 @@ export function BrandedLayout({ children }: { children: ReactNode }) {
           }
         `}
       </style>
-      <div className="grid lg:grid-cols-2 grow">
+      <div className="grid lg:grid-cols-2 grow min-h-[calc(100vh-2rem)]">
         <div className="flex justify-center items-center p-8 lg:p-10 order-2 lg:order-1">
           <Card className="w-full max-w-[400px]">
             <CardContent className="p-6">{children}</CardContent>

@@ -1,0 +1,45 @@
+- generic [active] [ref=f2e1]:
+  - link "İçeriğe Atla" [ref=f2e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - generic [ref=f2e8]:
+        - heading "ŞantiyePro'ya Giriş Yap" [level=1] [ref=f2e10]
+        - alert [ref=f2e11]:
+          - generic [ref=f2e15]:
+            - text: kullanıcı adı ve
+            - strong
+            - text: ile demo erişimini deneyebilirsiniz.
+        - button "Google ile Giriş Yap" [ref=f2e17]
+        - generic [ref=f2e23]: veya
+        - generic [ref=f2e25]:
+          - text: E-posta
+          - textbox "E-posta" [ref=f2e26]:
+            - /placeholder: E-posta adresiniz
+            - text: demo@kt.com
+        - generic [ref=f2e27]:
+          - generic [ref=f2e28]:
+            - text: Şifre
+            - link "Şifremi unuttum" [ref=f2e29] [cursor=pointer]:
+              - /url: /reset-password
+          - generic [ref=f2e30]:
+            - textbox "Şifre" [ref=f2e31]:
+              - /placeholder: Şifreniz
+              - text: demo123
+            - button "Şifreyi göster" [ref=f2e32]
+        - generic [ref=f2e36]:
+          - checkbox "Beni hatırla" [ref=f2e37]
+          - checkbox
+          - text: Beni hatırla
+        - button "Giriş Yap" [ref=f2e39]
+        - paragraph [ref=f2e40]:
+          - text: Hesabın yok mu? Kayıt ol
+          - link "Kayıt Ol" [ref=f2e41] [cursor=pointer]:
+            - /url: /signup
+      - generic [ref=f2e43]:
+        - link [ref=f2e44] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f2e45]:
+          - heading "Secure Dashboard Access" [level=3] [ref=f2e46]
+          - generic [ref=f2e47]: A robust authentication gateway ensuring secure efficient user access to the Metronic Dashboard interface.
+  - region "Notifications alt+T"
