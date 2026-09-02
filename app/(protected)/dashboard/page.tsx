@@ -1,12 +1,7 @@
-/**
- * `app/(protected)/dashboard/page.tsx`
- *
- * ŞantiyePro menu tarafından kullanılan URL alias'ı (/dashboard).
- * Asıl sayfa: app/(protected)/page.tsx (kök /)
- */
-
 import { redirect } from 'next/navigation';
 
-export default function DashboardAliasPage(): never {
+// ECC P1 fix: /dashboard URL'i kök `app/(protected)/page.tsx` Dashboard'ı
+// render ediyor — duplicate sayfa yerine redirect.
+export default function DashboardAlias() {
   redirect('/');
 }
