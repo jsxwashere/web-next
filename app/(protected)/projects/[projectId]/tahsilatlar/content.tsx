@@ -25,6 +25,7 @@ import type { Collection } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 import { NewCollectionSheet } from './_components/new-collection-sheet';
+import { CollectionDetailDrawer } from './_components/collection-detail-drawer';
 
 /**
  * Sprint 8.3a — Tahsilatlar content (ŞantiyePro tasarımına uyarlandı).
@@ -84,6 +85,7 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [openNew, setOpenNew] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -446,7 +448,16 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
               return (
                 <div
                   key={collection.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedId(collection.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedId(collection.id);
+                    }
+                  }}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
                   <div className="grid size-9 shrink-0 place-items-center rounded-md bg-emerald-500/10">
                     <Banknote className="size-4 text-emerald-500" />
@@ -494,6 +505,14 @@ export function TahsilatlarContent({ projectId }: { projectId: string }) {
         open={openNew}
         onOpenChange={setOpenNew}
         projectId={projectId}
+      />
+
+      <CollectionDetailDrawer
+        open={Boolean(selectedId)}
+        onOpenChange={(o) => {
+          if (!o) setSelectedId(null);
+        }}
+        transactionId={selectedId}
       />
     </Container>
   );

@@ -716,3 +716,219 @@ export function useProjectStats(
     staleTime: 1000 * 60 * 5,
   });
 }
+
+// ============================================
+// DETAY HOOK'LARI — Sprint 8.4
+// ============================================
+
+/**
+ * Tek bir transaction (gelir/gider) detayı.
+ * Laravel: GET /api/transactions/{id}
+ */
+export function useGetTransaction(
+  id: string | null,
+): UseQueryResult<{ data: Transaction }, Error> {
+  return useQuery<{ data: Transaction }, Error>({
+    queryKey: ['transaction', id],
+    queryFn: () =>
+      api.get<{ data: Transaction }>(`/transactions/${id}`) as Promise<{
+        data: Transaction;
+      }>,
+    enabled: Boolean(id),
+    staleTime: 1000 * 60,
+  });
+}
+
+/**
+ * Transaction güncelleme (PATCH).
+ * Laravel: PATCH /api/transactions/{id}
+ */
+export function useUpdateTransaction(): UseMutationResult<
+  { data: Transaction },
+  Error,
+  { id: string; data: Record<string, unknown> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    { data: Transaction },
+    Error,
+    { id: string; data: Record<string, unknown> }
+  >({
+    mutationFn: ({ id, data }) =>
+      api.patch<{ data: Transaction }>(`/transactions/${id}`, data),
+    onSuccess: (_resp, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['transaction', id] });
+      void queryClient.invalidateQueries({ queryKey: ['project-transactions'] });
+      void queryClient.invalidateQueries({ queryKey: ['project-collections'] });
+    },
+  });
+}
+
+/**
+ * Tek sözleşme detayı + kalemler.
+ * Laravel: GET /api/contracts/{id}?include=details
+ */
+export function useGetContract(
+  id: string | null,
+): UseQueryResult<{ data: Contract }, Error> {
+  return useQuery<{ data: Contract }, Error>({
+    queryKey: ['contract', id],
+    queryFn: () =>
+      api.get<{ data: Contract }>(`/contracts/${id}`, {
+        params: { include: 'details' },
+      }) as Promise<{ data: Contract }>,
+    enabled: Boolean(id),
+    staleTime: 1000 * 60,
+  });
+}
+
+/**
+ * Sözleşme güncelleme.
+ * Laravel: PATCH /api/contracts/{id}
+ */
+export function useUpdateContract(): UseMutationResult<
+  { data: Contract },
+  Error,
+  { id: string; data: Record<string, unknown> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    { data: Contract },
+    Error,
+    { id: string; data: Record<string, unknown> }
+  >({
+    mutationFn: ({ id, data }) =>
+      api.patch<{ data: Contract }>(`/contracts/${id}`, data),
+    onSuccess: (_resp, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['contract', id] });
+      void queryClient.invalidateQueries({ queryKey: ['project-contracts'] });
+    },
+  });
+}
+
+/**
+ * Tek hakediş detayı.
+ * Laravel: GET /api/entitlements/{id}
+ */
+export function useGetEntitlement(
+  id: string | null,
+): UseQueryResult<{ data: Entitlement }, Error> {
+  return useQuery<{ data: Entitlement }, Error>({
+    queryKey: ['entitlement', id],
+    queryFn: () =>
+      api.get<{ data: Entitlement }>(`/entitlements/${id}`) as Promise<{
+        data: Entitlement;
+      }>,
+    enabled: Boolean(id),
+    staleTime: 1000 * 60,
+  });
+}
+
+/**
+ * Hakediş güncelleme.
+ * Laravel: PATCH /api/entitlements/{id}
+ */
+export function useUpdateEntitlement(): UseMutationResult<
+  { data: Entitlement },
+  Error,
+  { id: string; data: Record<string, unknown> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    { data: Entitlement },
+    Error,
+    { id: string; data: Record<string, unknown> }
+  >({
+    mutationFn: ({ id, data }) =>
+      api.patch<{ data: Entitlement }>(`/entitlements/${id}`, data),
+    onSuccess: (_resp, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['entitlement', id] });
+      void queryClient.invalidateQueries({ queryKey: ['project-entitlements'] });
+    },
+  });
+}
+
+/**
+ * Tek malzeme detayı.
+ * Laravel: GET /api/materials/{id}
+ */
+export function useGetMaterial(
+  id: string | null,
+): UseQueryResult<{ data: Material }, Error> {
+  return useQuery<{ data: Material }, Error>({
+    queryKey: ['material', id],
+    queryFn: () =>
+      api.get<{ data: Material }>(`/materials/${id}`) as Promise<{
+        data: Material;
+      }>,
+    enabled: Boolean(id),
+    staleTime: 1000 * 60,
+  });
+}
+
+/**
+ * Malzeme güncelleme.
+ * Laravel: PATCH /api/materials/{id}
+ */
+export function useUpdateMaterial(): UseMutationResult<
+  { data: Material },
+  Error,
+  { id: string; data: Record<string, unknown> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    { data: Material },
+    Error,
+    { id: string; data: Record<string, unknown> }
+  >({
+    mutationFn: ({ id, data }) =>
+      api.patch<{ data: Material }>(`/materials/${id}`, data),
+    onSuccess: (_resp, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['material', id] });
+      void queryClient.invalidateQueries({ queryKey: ['project-materials'] });
+    },
+  });
+}
+
+/**
+ * Tek personel detayı (global).
+ * Laravel: GET /api/personnel/{id}
+ */
+export function useGetPersonnel(
+  id: string | null,
+): UseQueryResult<{ data: Personnel }, Error> {
+  return useQuery<{ data: Personnel }, Error>({
+    queryKey: ['personnel-detail', id],
+    queryFn: () =>
+      api.get<{ data: Personnel }>(`/personnel/${id}`) as Promise<{
+        data: Personnel;
+      }>,
+    enabled: Boolean(id),
+    staleTime: 1000 * 60,
+  });
+}
+
+/**
+ * Personel güncelleme.
+ * Laravel: PATCH /api/personnel/{id}
+ */
+export function useUpdatePersonnel(): UseMutationResult<
+  { data: Personnel },
+  Error,
+  { id: string; data: Record<string, unknown> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    { data: Personnel },
+    Error,
+    { id: string; data: Record<string, unknown> }
+  >({
+    mutationFn: ({ id, data }) =>
+      api.patch<{ data: Personnel }>(`/personnel/${id}`, data),
+    onSuccess: (_resp, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ['personnel-detail', id] });
+      void queryClient.invalidateQueries({ queryKey: ['personnel'] });
+      void queryClient.invalidateQueries({ queryKey: ['project-personnel'] });
+    },
+  });
+}

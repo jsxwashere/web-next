@@ -24,6 +24,7 @@ import type { Material } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 import { NewMaterialSheet } from './_components/new-material-sheet';
+import { MaterialDetailDrawer } from './_components/material-detail-drawer';
 
 /**
  * Sprint 8.3a — Malzeme (ŞantiyePro tasarımına uyarlandı).
@@ -45,6 +46,7 @@ export function MalzemeContent({ projectId }: { projectId: string }) {
   const [search, setSearch] = useState('');
   const [returnsOnly, setReturnsOnly] = useState(false);
   const [openNew, setOpenNew] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const totalAmount = materials
@@ -233,7 +235,16 @@ export function MalzemeContent({ projectId }: { projectId: string }) {
               return (
                 <div
                   key={m.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedId(m.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedId(m.id);
+                    }
+                  }}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
                   <div
                     className={cn(
@@ -321,6 +332,14 @@ export function MalzemeContent({ projectId }: { projectId: string }) {
         open={openNew}
         onOpenChange={setOpenNew}
         projectId={projectId}
+      />
+
+      <MaterialDetailDrawer
+        open={Boolean(selectedId)}
+        onOpenChange={(o) => {
+          if (!o) setSelectedId(null);
+        }}
+        materialId={selectedId}
       />
     </Container>
   );

@@ -33,6 +33,7 @@ import type { Personnel, PersonnelAssignment } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, getInitials, storageUrl, todayStr } from '@/lib/helpers';
 import { NewPersonnelSheet } from './_components/new-personnel-sheet';
+import { PersonnelDetailDrawer } from './_components/personnel-detail-drawer';
 
 /**
  * Sprint 8.3b — Personel (project-scoped) — ŞantiyePro tasarımına uyarlandı.
@@ -114,6 +115,7 @@ export function PersonelContent({ projectId }: { projectId: string }) {
   const [openNew, setOpenNew] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | PersonnelStatus>('all');
   const [salaryTypeFilter, setSalaryTypeFilter] = useState<'all' | SalaryTypeKey>('all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const activeCount = useMemo(
     () => personnel.filter((p) => p.status === PersonnelStatus.ACTIVE).length,
@@ -449,8 +451,17 @@ export function PersonelContent({ projectId }: { projectId: string }) {
               return (
                 <div
                   key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedId(p.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedId(p.id);
+                    }
+                  }}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/50',
+                    'flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/50',
                     p.status !== PersonnelStatus.ACTIVE && !isLeft && 'opacity-60',
                   )}
                 >
@@ -540,6 +551,14 @@ export function PersonelContent({ projectId }: { projectId: string }) {
       </div>
 
       <NewPersonnelSheet open={openNew} onOpenChange={setOpenNew} />
+
+      <PersonnelDetailDrawer
+        open={Boolean(selectedId)}
+        onOpenChange={(o) => {
+          if (!o) setSelectedId(null);
+        }}
+        personnelId={selectedId}
+      />
     </Container>
   );
 }

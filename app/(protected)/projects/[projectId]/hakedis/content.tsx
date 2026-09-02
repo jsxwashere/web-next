@@ -33,6 +33,7 @@ import type { Entitlement } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 import { NewEntitlementSheet } from './_components/new-entitlement-sheet';
+import { EntitlementDetailDrawer } from './_components/entitlement-detail-drawer';
 
 /**
  * Sprint 8.3a — Hakediş (ŞantiyePro tasarımına uyarlandı).
@@ -55,6 +56,7 @@ export function HakedisContent({ projectId }: { projectId: string }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | EntitlementStatusKey>('all');
   const [openNew, setOpenNew] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const entitlementsQuery = useProjectEntitlements(projectId, {
     search: search || undefined,
@@ -330,7 +332,16 @@ export function HakedisContent({ projectId }: { projectId: string }) {
               return (
                 <div
                   key={e.id}
-                  className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedId(e.id)}
+                  onKeyDown={(ev) => {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                      ev.preventDefault();
+                      setSelectedId(e.id);
+                    }
+                  }}
+                  className="flex cursor-pointer flex-col gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
                   <div className="flex items-start gap-3">
                     <div className="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10">
@@ -408,6 +419,14 @@ export function HakedisContent({ projectId }: { projectId: string }) {
         open={openNew}
         onOpenChange={setOpenNew}
         projectId={projectId}
+      />
+
+      <EntitlementDetailDrawer
+        open={Boolean(selectedId)}
+        onOpenChange={(o) => {
+          if (!o) setSelectedId(null);
+        }}
+        entitlementId={selectedId}
       />
     </Container>
   );

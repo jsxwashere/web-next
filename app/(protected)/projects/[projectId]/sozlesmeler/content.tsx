@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProjectContracts } from '@/hooks/use-santiyepro-api';
 import { NewContractSheet } from './_components/new-contract-sheet';
+import { ContractDetailDrawer } from './_components/contract-detail-drawer';
 import {
   ContractStatus,
   ContractStatusLabels,
@@ -56,6 +57,7 @@ export function SozlesmelerContent({ projectId }: { projectId: string }) {
   const [typeFilter, setTypeFilter] = useState<'all' | ContractTypeKey>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | ContractStatusKey>('all');
   const [openNew, setOpenNew] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const contractsQuery = useProjectContracts(projectId, {
     search: search || undefined,
@@ -315,7 +317,16 @@ export function SozlesmelerContent({ projectId }: { projectId: string }) {
               return (
                 <div
                   key={c.id}
-                  className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedId(c.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedId(c.id);
+                    }
+                  }}
+                  className="flex cursor-pointer flex-col gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
                   <div className="flex items-start gap-3">
                     <div className="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10">
@@ -408,6 +419,14 @@ export function SozlesmelerContent({ projectId }: { projectId: string }) {
         open={openNew}
         onOpenChange={setOpenNew}
         projectId={projectId}
+      />
+
+      <ContractDetailDrawer
+        open={Boolean(selectedId)}
+        onOpenChange={(o) => {
+          if (!o) setSelectedId(null);
+        }}
+        contractId={selectedId}
       />
     </Container>
   );

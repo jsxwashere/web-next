@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { formatAmount, formatDateTr } from '@/lib/helpers';
 import { PaymentTypeLabels, TransactionKindLabels } from '@/lib/enums';
 import { NewPaymentSheet } from './_components/new-payment-sheet';
+import { PaymentDetailDrawer } from './_components/payment-detail-drawer';
 
 /**
  * Sprint 8.3a — Ödemeler (ŞantiyePro tasarımına uyarlandı).
@@ -98,6 +99,7 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [openNew, setOpenNew] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const transactionsQuery = useProjectTransactions(projectId, {
     search: searchText || undefined,
@@ -483,7 +485,16 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
               return (
                 <div
                   key={tx.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedId(tx.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedId(tx.id);
+                    }
+                  }}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
                   <div
                     className={cn(
@@ -610,6 +621,14 @@ export function OdemelerContent({ projectId }: { projectId: string }) {
         open={openNew}
         onOpenChange={setOpenNew}
         projectId={projectId}
+      />
+
+      <PaymentDetailDrawer
+        open={Boolean(selectedId)}
+        onOpenChange={(o) => {
+          if (!o) setSelectedId(null);
+        }}
+        transactionId={selectedId}
       />
     </Container>
   );
