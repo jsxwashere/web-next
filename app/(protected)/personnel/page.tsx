@@ -1,16 +1,17 @@
 /**
  * `app/(protected)/personnel/page.tsx`
  *
- * Sprint 4 — Global Personel listesi (proje bağlamı yok).
+ * Sprint 8.1 — Global Personel listesi (ŞantiyePro tasarımı taşınmış).
  *
  * ŞantiyePro `resources/js/pages/personnel/index.tsx` davranışı korunur:
- *   - Stat kartları (toplam aktif personel, bugün şantiyede, bu ay maaş)
- *   - Aktif/pasif filtresi
- *   - Günlük/aylık maaş filtresi
- *   - Arama
- *   - Personel kartları: avatar, isim, rol, maaş, aktif toggle
+ *   - Stat kartları: Aktif Personel, Bugün Şantiyede, Bu Ay Maaş
+ *   - Günlük/Haftalık/Aylık dağılımı
+ *   - Durum tabs (Aktif, Pasif, Ayrılan, Tümü)
+ *   - Maaş tipi filtresi (Günlük, Haftalık, Aylık)
+ *   - Arama (isim + rol)
+ *   - Personel kartları: avatar, isim, rol, maaş, aktif/pasif toggle
  *
- * API: GET /api/personnel
+ * API: GET /api/personnel, GET /api/attendance?date=
  */
 
 'use client';
@@ -18,6 +19,8 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Building2,
+  CalendarCheck,
   DollarSign,
   RotateCcw,
   Search,
@@ -31,11 +34,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   usePersonnel,
+  useTodayAttendance,
   useTogglePersonnelStatus,
 } from '@/hooks/use-santiyepro-api';
 import {
+  AttendanceStatus,
   PersonnelRoleLabels,
   PersonnelStatus,
+  PersonnelStatusLabels,
   PersonnelStatusVariants,
   SalaryType,
   SalaryTypeLabels,
@@ -44,7 +50,12 @@ import {
 } from '@/lib/enums';
 import type { Personnel, PersonnelAssignment } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
-import { formatAmount, getInitials, storageUrl } from '@/lib/helpers';
+import {
+  formatAmount,
+  getInitials,
+  storageUrl,
+  todayStr,
+} from '@/lib/helpers';
 
 const AVATAR_COLORS = [
   'bg-blue-500/10 text-blue-500',
@@ -63,7 +74,10 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function getRoleLabel(role?: string | null, customRole?: string | null): string {
+function getRoleLabel(
+  role?: string | null,
+  customRole?: string | null,
+): string {
   if (!role && !customRole) return '—';
   if (role === '__custom__' || (role && !PersonnelRoleLabels[role])) {
     return customRole ?? role ?? '—';
@@ -77,15 +91,23 @@ function getActiveAssignment(p: Personnel): PersonnelAssignment | undefined {
 
 function getWage(a?: PersonnelAssignment): {
   amount: number;
-  unit: string;
+  unitKey: 'wagePerDay' | 'wagePerWeek' | 'wagePerMonth' | null;
 } {
-  if (!a) return { amount: 0, unit: '' };
+  if (!a) return { amount: 0, unitKey: null };
   if (a.salary_type === SalaryType.MONTHLY && a.monthly_salary) {
-    return { amount: a.monthly_salary, unit: '/ Ay' };
+    return { amount: a.monthly_salary, unitKey: 'wagePerMonth' };
   }
-  if (a.daily_wage) return { amount: a.daily_wage, unit: '/ Gün' };
-  return { amount: 0, unit: '' };
+  if (a.salary_type === SalaryType.WEEKLY && a.weekly_salary) {
+    return { amount: a.weekly_salary, unitKey: 'wagePerWeek' };
+  }
+  if (a.daily_wage) {
+    return { amount: a.daily_wage, unitKey: 'wagePerDay' };
+  }
+  return { amount: 0, unitKey: null };
 }
+
+type StatusTabValue = PersonnelStatusKey | 'all';
+type SalaryTypeFilterValue = 'all' | SalaryTypeKey;
 
 export default function PersonnelPage() {
   const router = useRouter();
@@ -93,44 +115,48 @@ export default function PersonnelPage() {
   const personnelQuery = usePersonnel();
   const toggleMutation = useTogglePersonnelStatus();
 
+  const todayDate = todayStr();
+  const attendanceQuery = useTodayAttendance(todayDate);
+
   const personnel = useMemo<Personnel[]>(
     () => personnelQuery.data?.data ?? [],
     [personnelQuery.data],
   );
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PersonnelStatusKey>(
+  const [statusFilter, setStatusFilter] = useState<StatusTabValue>(
     PersonnelStatus.ACTIVE,
   );
-  const [salaryTypeFilter, setSalaryTypeFilter] = useState<
-    'all' | SalaryTypeKey
-  >('all');
+  const [salaryTypeFilter, setSalaryTypeFilter] =
+    useState<SalaryTypeFilterValue>('all');
 
   const filteredPersonnel = useMemo(() => {
     return personnel.filter((p) => {
-      // Aktif filtresi
-      if (
-        statusFilter === PersonnelStatus.ACTIVE &&
-        p.status !== PersonnelStatus.ACTIVE
-      ) {
-        return false;
-      }
-      if (
-        statusFilter === PersonnelStatus.PASSIVE &&
-        p.status === PersonnelStatus.ACTIVE
-      ) {
-        return false;
+      // Durum filtresi
+      if (statusFilter !== 'all') {
+        if (statusFilter === PersonnelStatus.ACTIVE && p.status !== PersonnelStatus.ACTIVE) {
+          return false;
+        }
+        if (
+          statusFilter === PersonnelStatus.PASSIVE &&
+          p.status === PersonnelStatus.ACTIVE
+        ) {
+          return false;
+        }
+        if (
+          statusFilter === PersonnelStatus.LEFT &&
+          p.status !== PersonnelStatus.LEFT
+        ) {
+          return false;
+        }
       }
 
       // Maaş tipi filtresi
       if (salaryTypeFilter !== 'all') {
-        const a = getActiveAssignment(p);
         const match = p.assignments?.some(
           (x) => x.is_active && x.salary_type === salaryTypeFilter,
         );
         if (!match) return false;
-        // Unused variable warning suppression
-        void a;
       }
 
       // Arama
@@ -153,10 +179,56 @@ export default function PersonnelPage() {
   );
   const passiveCount = useMemo(
     () =>
-      personnel.filter((p) => p.status !== PersonnelStatus.ACTIVE).length,
+      personnel.filter((p) => p.status === PersonnelStatus.PASSIVE).length,
+    [personnel],
+  );
+  const leftCount = useMemo(
+    () => personnel.filter((p) => p.status === PersonnelStatus.LEFT).length,
     [personnel],
   );
 
+  // ── Bugün şantiyede sayısı (attendance records) ──
+  const todayAtSiteCount = useMemo(() => {
+    const entries = attendanceQuery.data?.data ?? [];
+    return entries.filter(
+      (e) =>
+        (e as { status?: string }).status === AttendanceStatus.FULL_DAY ||
+        (e as { status?: string }).status === AttendanceStatus.HALF_DAY ||
+        (e as { status?: string }).status === AttendanceStatus.PRESENT ||
+        (e as { status?: string }).status === AttendanceStatus.LATE,
+    ).length;
+  }, [attendanceQuery.data]);
+
+  // ── Maaş tipi dağılımı (sadece aktif) ──
+  const dailyCount = useMemo(
+    () =>
+      personnel.filter((p) => {
+        if (p.status !== PersonnelStatus.ACTIVE) return false;
+        const a = getActiveAssignment(p);
+        return a?.salary_type === SalaryType.DAILY;
+      }).length,
+    [personnel],
+  );
+  const weeklyCount = useMemo(
+    () =>
+      personnel.filter((p) => {
+        if (p.status !== PersonnelStatus.ACTIVE) return false;
+        const a = getActiveAssignment(p);
+        return a?.salary_type === SalaryType.WEEKLY;
+      }).length,
+    [personnel],
+  );
+  const monthlyCount = useMemo(
+    () =>
+      personnel.filter((p) => {
+        if (p.status !== PersonnelStatus.ACTIVE) return false;
+        const a = getActiveAssignment(p);
+        return a?.salary_type === SalaryType.MONTHLY;
+      }).length,
+    [personnel],
+  );
+
+  // ── Bu ay tahmini maaş ──
   const totalMonthlySalary = useMemo(() => {
     return personnel
       .filter((p) => p.status === PersonnelStatus.ACTIVE)
@@ -222,7 +294,7 @@ export default function PersonnelPage() {
       </div>
 
       {/* Stat Kartları */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -230,10 +302,32 @@ export default function PersonnelPage() {
                 <Users className="size-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">{t('pages.personnel.activePersonnel')}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('pages.personnel.activePersonnel')}
+                </p>
                 <p className="text-2xl font-bold">{activeCount}</p>
                 <p className="text-xs text-muted-foreground">
-                  Pasif / Ayrılan: {passiveCount}
+                  {t('pages.personnel.passive')}: {passiveCount} ·{' '}
+                  {t('pages.personnel.left')}: {leftCount}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-green-500/10 p-5">
+                <CalendarCheck className="size-4 text-green-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  {t('pages.personnel.todayAtSite')}
+                </p>
+                <p className="text-2xl font-bold">{todayAtSiteCount}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('pages.personnel.todayAtSiteSub')}
                 </p>
               </div>
             </div>
@@ -247,17 +341,33 @@ export default function PersonnelPage() {
                 <DollarSign className="size-4 text-amber-500" />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-muted-foreground">Bu Ay Maaş (tahmini)</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('pages.personnel.monthlySalary')}
+                </p>
                 <p className="text-2xl font-bold">
                   {formatAmount(totalMonthlySalary)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Aktif personelin maaş türüne göre
+                  {t('pages.personnel.monthlySalarySub')}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Maaş tipi dağılımı (compact) */}
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <Building2 className="size-3.5" />
+          {t('pages.personnel.dailyCount')}: {dailyCount}
+        </span>
+        <span className="flex items-center gap-1.5">
+          {t('pages.personnel.weeklyCount')}: {weeklyCount}
+        </span>
+        <span className="flex items-center gap-1.5">
+          {t('pages.personnel.monthlyCount')}: {monthlyCount}
+        </span>
       </div>
 
       {/* Filtre barı */}
@@ -278,6 +388,24 @@ export default function PersonnelPage() {
             )}
           >
             {SalaryTypeLabels[SalaryType.DAILY]}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setSalaryTypeFilter(
+                salaryTypeFilter === SalaryType.WEEKLY
+                  ? 'all'
+                  : SalaryType.WEEKLY,
+              )
+            }
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+              salaryTypeFilter === SalaryType.WEEKLY
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+          >
+            {SalaryTypeLabels[SalaryType.WEEKLY]}
           </button>
           <button
             type="button"
@@ -311,6 +439,19 @@ export default function PersonnelPage() {
           </div>
           <button
             type="button"
+            onClick={() => setStatusFilter('all')}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+              statusFilter === 'all'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+          >
+            {t('pages.personnel.all')}{' '}
+            <span className="text-xs opacity-70">{personnel.length}</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setStatusFilter(PersonnelStatus.ACTIVE)}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
@@ -319,7 +460,8 @@ export default function PersonnelPage() {
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
             )}
           >
-            Aktif <span className="text-xs opacity-70">{activeCount}</span>
+            {PersonnelStatusLabels[PersonnelStatus.ACTIVE]}{' '}
+            <span className="text-xs opacity-70">{activeCount}</span>
           </button>
           <button
             type="button"
@@ -331,8 +473,21 @@ export default function PersonnelPage() {
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
             )}
           >
-            Pasif / Ayrılan{' '}
+            {PersonnelStatusLabels[PersonnelStatus.PASSIVE]}{' '}
             <span className="text-xs opacity-70">{passiveCount}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter(PersonnelStatus.LEFT)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+              statusFilter === PersonnelStatus.LEFT
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            )}
+          >
+            {PersonnelStatusLabels[PersonnelStatus.LEFT]}{' '}
+            <span className="text-xs opacity-70">{leftCount}</span>
           </button>
         </div>
       </div>
@@ -361,7 +516,7 @@ export default function PersonnelPage() {
           {filteredPersonnel.map((p) => {
             const roleLabel = getRoleLabel(p.role, p.custom_role);
             const a = getActiveAssignment(p);
-            const { amount: wage, unit: wageUnit } = getWage(a);
+            const { amount: wage, unitKey: wageUnitKey } = getWage(a);
             const color = getAvatarColor(p.name);
             const isLeft = p.status === PersonnelStatus.LEFT;
             const isActive = p.status === PersonnelStatus.ACTIVE;
@@ -421,11 +576,11 @@ export default function PersonnelPage() {
                   </p>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span>{roleLabel}</span>
-                    {wage > 0 && (
+                    {wage > 0 && wageUnitKey && (
                       <>
                         <span>·</span>
                         <span>
-                          {formatAmount(wage)} {wageUnit}
+                          {formatAmount(wage)} {t(`pages.personnel.${wageUnitKey}`)}
                         </span>
                       </>
                     )}
@@ -434,8 +589,10 @@ export default function PersonnelPage() {
 
                 {/* Sağ: Aktif toggle veya rozet */}
                 <div className="flex shrink-0 items-center gap-2">
-                  <Badge variant={PersonnelStatusVariants[p.status] ?? 'secondary'}>
-                    {isActive ? 'Aktif' : isLeft ? 'Ayrıldı' : 'Pasif'}
+                  <Badge
+                    variant={PersonnelStatusVariants[p.status] ?? 'secondary'}
+                  >
+                    {PersonnelStatusLabels[p.status] ?? p.status}
                   </Badge>
                   {isLeft ? (
                     <button
@@ -444,7 +601,7 @@ export default function PersonnelPage() {
                         e.stopPropagation();
                         handleToggle(p);
                       }}
-                      title="Yeniden aktifleştir"
+                      title={t('pages.personnel.reactivate')}
                       className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       <RotateCcw className="size-4" />
@@ -459,7 +616,11 @@ export default function PersonnelPage() {
                         handleToggle(p);
                       }}
                       disabled={toggleMutation.isPending}
-                      title={isActive ? 'Pasife al' : 'Aktifleştir'}
+                      title={
+                        isActive
+                          ? t('pages.personnel.deactivate')
+                          : t('pages.personnel.activate')
+                      }
                       className={cn(
                         'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors',
                         isActive ? 'bg-primary' : 'bg-muted',

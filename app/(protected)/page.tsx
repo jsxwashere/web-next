@@ -1,37 +1,65 @@
 /**
  * `app/(protected)/page.tsx`
  *
- * Sprint 4 + 6 — Dashboard (Pano).
+ * Sprint 8.1 — Dashboard (Pano) — ŞantiyePro tasarımı taşınmış.
  *
- * ŞantiyePro `resources/js/pages/dashboard.tsx` davranışı birebir korunur:
- *   - KPI kartları (aktif şantiyeler, toplam alacak, bu ay gider, bekleyen hakediş, en yakın ödeme)
+ * ŞantiyePro `resources/js/pages/dashboard/index.tsx` davranışı korunur:
+ *   - Selamlama + hava durumu widget'ı (aktif projeler için)
+ *   - KPI kartları (aktif şantiyeler, toplam alacak, bu ay gider, bekleyen hakediş)
+ *   - En yakın ödeme — ayrı kart
  *   - Kritik ödemeler listesi
  *   - Son hareketler
  *
- * API'ler: GET /api/dashboard/stats + GET /api/dashboard/recent-activity
- *
- * Sprint 6 — i18n entegrasyonu (useTranslation + pages.dashboard.* keys).
+ * API: GET /api/dashboard/stats + GET /api/dashboard/recent-activity
+ *      + GET /api/weather (her aktif proje için)
  */
 
 'use client';
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { useQueries } from '@tanstack/react-query';
 import {
   Building2,
   ChevronRight,
   Clock,
+  Cloud,
+  CloudRain,
+  CloudSnow,
   Receipt,
+  Sun,
   Wallet,
+  Wind,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   useDashboardStats,
+  useProjects,
   useRecentActivity,
+  type WeatherData,
 } from '@/hooks/use-santiyepro-api';
-import { formatAmount, formatShortDate } from '@/lib/helpers';
+import { formatAmount, formatShortDate, getEnumLabel } from '@/lib/helpers';
+import { api } from '@/lib/api/client';
+import {
+  ProjectStatus,
+  Weather,
+  WeatherEmojis,
+  WeatherLabels,
+} from '@/lib/enums';
+import type { Project } from '@/lib/api/types';
+
+const WEATHER_ICONS: Record<string, LucideIcon> = {
+  [Weather.SUNNY]: Sun,
+  [Weather.CLOUDY]: Cloud,
+  [Weather.RAINY]: CloudRain,
+  [Weather.STORMY]: Wind,
+  [Weather.SNOWY]: CloudSnow,
+  [Weather.FOGGY]: Cloud,
+};
 
 function getGreetingKey(hour: number): string {
   if (hour < 6) return 'greetings.night';
@@ -40,14 +68,65 @@ function getGreetingKey(hour: number): string {
   return 'greetings.evening';
 }
 
+/** useQueries queryFn closure'ı içinde hook kullanamayız; api.get direkt çağrılır. */
+async function weatherFetcher(
+  projectId: string,
+  date: string,
+): Promise<WeatherData | null> {
+  try {
+    const res = await api.get<{ data: WeatherData }>('/weather', {
+      params: { project_id: projectId, date },
+    });
+    return res.data;
+  } catch {
+    return null;
+  }
+}
+
 export default function DashboardPage() {
   const { t } = useTranslation();
   const statsQuery = useDashboardStats();
   const activityQuery = useRecentActivity(10);
+  const projectsQuery = useProjects();
 
   const stats = statsQuery.data?.stats;
   const activities = activityQuery.data?.activities ?? [];
   const nearest = stats?.critical_payments?.items?.[0] ?? null;
+
+  // ── Aktif projeler için hava durumu (en fazla 6) ──
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const activeProjects = useMemo<Project[]>(
+    () =>
+      (projectsQuery.data?.data ?? [])
+        .filter(
+          (p) =>
+            p.status === ProjectStatus.IN_PROGRESS ||
+            p.status === ProjectStatus.ACTIVE,
+        )
+        .slice(0, 6),
+    [projectsQuery.data],
+  );
+
+  const weatherQueries = useQueries({
+    queries: useMemo(
+      () =>
+        activeProjects.map((p) => ({
+          queryKey: ['weather', p.id, today],
+          queryFn: () => weatherFetcher(p.id, today),
+          staleTime: 1000 * 60 * 30,
+        })),
+      [activeProjects, today],
+    ),
+  });
+
+  const weatherList = useMemo(
+    () =>
+      activeProjects.map((p, idx) => ({
+        project: p,
+        data: weatherQueries[idx]?.data ?? null,
+      })),
+    [activeProjects, weatherQueries],
+  );
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -153,45 +232,105 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* En Yakın Ödeme — ayrı kart */}
-      {nearest && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-700">
-                <Clock className="size-5" />
-              </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {t('pages.dashboard.nearestPayment')}
-                  </span>
-                  {nearest.status === 'overdue' && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-red-700 uppercase">
-                      {t('pages.dashboard.critical')}
+      {/* En Yakın Ödeme + Hava Durumu */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        {nearest && (
+          <Card>
+            <CardContent className="flex h-full flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-700">
+                  <Clock className="size-5" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {t('pages.dashboard.nearestPayment')}
                     </span>
-                  )}
-                </div>
-                <div className="mt-1 text-xl font-bold text-foreground">
-                  {formatAmount(nearest.amount ?? 0)}
-                </div>
-                <div className="mt-0.5 text-sm text-muted-foreground">
-                  {nearest.name}
-                  {nearest.date && ` · ${formatShortDate(nearest.date)}`}
+                    {nearest.status === 'overdue' && (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-red-700 uppercase">
+                        {t('pages.dashboard.critical')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-xl font-bold text-foreground">
+                    {formatAmount(nearest.amount ?? 0)}
+                  </div>
+                  <div className="mt-0.5 text-sm text-muted-foreground">
+                    {nearest.name}
+                    {nearest.date && ` · ${formatShortDate(nearest.date)}`}
+                  </div>
                 </div>
               </div>
-            </div>
-            {nearest.url && (
-              <Link
-                href={nearest.url}
-                className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
-              >
-                {t('common.buttons.detail')} <ChevronRight className="size-3.5" />
-              </Link>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              {nearest.url && (
+                <Link
+                  href={nearest.url}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  {t('common.buttons.detail')}{' '}
+                  <ChevronRight className="size-3.5" />
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hava Durumu — Aktif Projeler */}
+        {weatherList.length > 0 && (
+          <Card className={nearest ? 'xl:col-span-2' : 'xl:col-span-3'}>
+            <CardContent className="flex flex-col gap-3 p-5">
+              <header className="flex items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t('pages.dashboard.weatherTitle')}
+                </h2>
+                <Link
+                  href="/projects"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  {t('common.buttons.view')} <ChevronRight className="size-3" />
+                </Link>
+              </header>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                {weatherList.map(({ project, data }) => {
+                  const WIcon =
+                    WEATHER_ICONS[data?.weather ?? ''] ?? Sun;
+                  return (
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      className="flex flex-col items-center gap-1.5 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/50"
+                    >
+                      <WIcon className="size-5 text-muted-foreground" />
+                      {data ? (
+                        <>
+                          <span className="line-clamp-1 max-w-full text-[11px] font-semibold">
+                            {project.name}
+                          </span>
+                          <span className="text-xs font-semibold">
+                            {data.temperature_min_c ?? '—'}° /{' '}
+                            {data.temperature_max_c ?? '—'}°
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {getEnumLabel(data.weather, WeatherLabels)}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="line-clamp-1 max-w-full text-[11px] font-semibold text-muted-foreground">
+                            {project.name}
+                          </span>
+                          <Badge variant="outline" className="h-5 text-[10px]">
+                            —
+                          </Badge>
+                        </>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Kritik Ödemeler + Son Hareketler */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -206,7 +345,10 @@ export default function DashboardPage() {
             {statsQuery.isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+                  <div
+                    key={i}
+                    className="h-12 animate-pulse rounded-md bg-muted"
+                  />
                 ))}
               </div>
             ) : stats?.critical_payments?.items?.length ? (
@@ -231,7 +373,8 @@ export default function DashboardPage() {
                       </span>
                       {payment.days_overdue > 0 && (
                         <span className="inline-flex shrink-0 items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-red-700 uppercase">
-                          {payment.days_overdue} {t('pages.dashboard.daysOverdue')}
+                          {payment.days_overdue}{' '}
+                          {t('pages.dashboard.daysOverdue')}
                         </span>
                       )}
                     </>
@@ -275,7 +418,10 @@ export default function DashboardPage() {
             {activityQuery.isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+                  <div
+                    key={i}
+                    className="h-12 animate-pulse rounded-md bg-muted"
+                  />
                 ))}
               </div>
             ) : activities.length === 0 ? (
@@ -301,7 +447,8 @@ export default function DashboardPage() {
                           </span>
                           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                             {activity.project}
-                            {activity.date && ` · ${formatShortDate(activity.date)}`}
+                            {activity.date &&
+                              ` · ${formatShortDate(activity.date)}`}
                           </span>
                         </span>
                         {activity.amount > 0 && (
@@ -330,7 +477,8 @@ export default function DashboardPage() {
                           </span>
                           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                             {activity.project}
-                            {activity.date && ` · ${formatShortDate(activity.date)}`}
+                            {activity.date &&
+                              ` · ${formatShortDate(activity.date)}`}
                           </span>
                         </span>
                       </div>

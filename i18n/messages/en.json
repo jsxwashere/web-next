@@ -93,7 +93,8 @@
       "noActivity": "No activity yet",
       "noActivityDesc": "Payments, collections, and site reports will appear here.",
       "daysOverdue": "Days Overdue",
-      "payment": "Payment"
+      "payment": "Payment",
+      "weatherTitle": "Active Sites — Today's Weather"
     },
     "projects": {
       "title": "Projects",
@@ -106,13 +107,18 @@
       "errorDesc": "There was a problem loading the projects. Please refresh the page.",
       "location": "Location",
       "noLocation": "No location specified",
-      "personnelCount": "0 Personnel",
-      "firmCount": "0 Firms",
+      "personnelCount": "Personnel",
+      "firmCount": "Firms",
       "total": "Total",
       "sold": "Sold",
       "landowner": "Land P.",
       "remaining": "Remaining",
       "newProject": "New Project",
+      "weather": "Weather",
+      "typeFilter": "Project Type",
+      "typeAll": "All Types",
+      "progress": "Progress",
+      "allTypes": "All Types",
       "wizard": {
         "title": "Create New Project",
         "subtitle": "Set up your project in 5 steps",
@@ -220,12 +226,33 @@
       "noResults": "No personnel found",
       "noResultsDesc": "Try changing the filter or search term.",
       "noPersonnel": "No personnel yet",
-      "noPersonnelDesc": "Add your first personnel."
+      "noPersonnelDesc": "Add your first personnel.",
+      "passive": "Passive",
+      "left": "Left",
+      "all": "All",
+      "todayAtSite": "At Site Today",
+      "todayAtSiteSub": "With attendance record",
+      "monthlySalary": "This Month Salary (est.)",
+      "monthlySalarySub": "Based on active personnel salary type",
+      "dailyCount": "Daily",
+      "weeklyCount": "Weekly",
+      "monthlyCount": "Monthly",
+      "salaryTypeFilter": "Salary Type",
+      "salaryTypeAll": "All Salary Types",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "reactivating": "Reactivating",
+      "phone": "Phone",
+      "wagePerDay": "/ Day",
+      "wagePerWeek": "/ Week",
+      "wagePerMonth": "/ Month"
     },
     "receipts": {
       "title": "Receipts",
       "subtitle": "AI-assisted receipt reading and archiving.",
       "uploadBank": "Upload a bank receipt; amount, date, and counterparty are auto-read.",
+      "uploadCta": "New Receipt",
       "noReceipts": "No receipts yet",
       "noReceiptsDesc": "Upload a bank receipt from above; the amount, date, and counterparty will be read automatically.",
       "noPending": "No pending receipts",
@@ -236,10 +263,58 @@
       "noFileError": "Please select a receipt first.",
       "confirmDelete": "Are you sure you want to delete this receipt?",
       "rereading": "Reading…",
-      "reread": "Re-read"
+      "reread": "Re-read",
+      "stats": {
+        "total": "Total Receipts",
+        "accepted": "Processed",
+        "pending": "Reading / Review",
+        "failed": "Failed",
+        "totalHint": "All time",
+        "acceptedHint": "Converted to payment record",
+        "pendingHint": "Awaiting your approval",
+        "failedHint": "Needs re-read"
+      },
+      "filters": {
+        "search": "Search receipts...",
+        "all": "All",
+        "noResults": "No receipts match the filter",
+        "noResultsDesc": "Try a different filter or clear the search.",
+        "completedHint": "{count} receipts completed (accepted/rejected)."
+      }
     },
     "account": {
       "title": "Account Settings",
+      "subtitle": "Manage your account and company settings here.",
+      "hero": {
+        "free": "Free",
+        "pro": "Pro",
+        "enterprise": "Enterprise",
+        "securityStatus": "Security status",
+        "upgrade": "Upgrade plan"
+      },
+      "groups": {
+        "account": {
+          "heading": "Account",
+          "description": "Personal info and access settings."
+        },
+        "notifications": {
+          "heading": "Notifications & Appearance",
+          "description": "Notification preferences and visual settings."
+        },
+        "workflow": {
+          "heading": "Workflow",
+          "description": "Data and process settings."
+        },
+        "team": {
+          "heading": "Team & Support",
+          "description": "Team management and help."
+        }
+      },
+      "cards": {
+        "manage": "Manage →",
+        "soon": "Soon",
+        "notifyMe": "Notify me"
+      },
       "notifications": {
         "title": "Notifications",
         "description": "Manage your notification preferences"

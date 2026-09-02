@@ -1,23 +1,30 @@
 /**
  * `app/(protected)/projects/page.tsx`
  *
- * Sprint 4 — Projeler listesi.
+ * Sprint 8.1 — Projeler listesi (ŞantiyePro tasarımı taşınmış).
  *
  * ŞantiyePro `resources/js/pages/projects/index.tsx` davranışı korunur:
- *   - Liste/Kart görünümü toggle
- *   - Durum tab'ları (Tümü, Aktif, Tamamlandı, Pasif)
+ *   - Liste/Kart görünümü toggle (localStorage persist)
+ *   - Durum tab'ları (Tümü, Aktif, Tamamlandı, Pasif) — sayıları ile
+ *   - Tip tab'ları (Tümü, Kat Karşılığı, Kendi Arsana, Taahhüt, Kentsel Dönüşüm)
  *   - Arama (isim + konum)
- *   - Proje kartı: tip ikonu, isim, konum, progress bar, birim sayıları
+ *   - Proje kartı: tip ikonu, isim, konum, progress bar, birim sayıları, hava durumu badge
+ *   - Personel/firma count'ları useProjectStats ile dinamik
  *
- * API: GET /api/projects
+ * API: GET /api/projects, GET /api/weather, GET /api/projects/{id}/stats
  */
 
 'use client';
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { api } from '@/lib/api/client';
 import {
   Building2,
+  Cloud,
+  CloudRain,
+  CloudSnow,
   FolderOpen,
   HardHat,
   LandPlot,
@@ -27,27 +34,43 @@ import {
   Plus,
   RotateCw,
   Search,
+  Sun,
   Users,
+  Wind,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useQueries } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@/components/common/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useProjects } from '@/hooks/use-santiyepro-api';
-import Link from 'next/link';
+import {
+  useProjectStats,
+  useProjectWeather,
+  useProjects,
+  type ProjectStats,
+  type WeatherData,
+} from '@/hooks/use-santiyepro-api';
 import {
   ProjectStatus,
   ProjectStatusLabels,
   ProjectStatusVariants,
   ProjectType,
+  ProjectTypeLabels,
+  Weather,
+  WeatherEmojis,
+  WeatherLabels,
   type ProjectStatus as ProjectStatusType,
+  type ProjectType as ProjectTypeKey,
 } from '@/lib/enums';
 import type { Project } from '@/lib/api/types';
+import { cn } from '@/lib/utils';
+import { formatNumber, getEnumLabel } from '@/lib/helpers';
 
 type StatusFilter = 'all' | ProjectStatusType;
+type TypeFilter = 'all' | ProjectTypeKey;
 
 const TYPE_ICONS: Record<string, LucideIcon> = {
   [ProjectType.CO_BUILD]: Building2,
@@ -56,14 +79,43 @@ const TYPE_ICONS: Record<string, LucideIcon> = {
   [ProjectType.URBAN_RENEWAL]: RotateCw,
 };
 
+const WEATHER_ICONS: Record<string, LucideIcon> = {
+  [Weather.SUNNY]: Sun,
+  [Weather.CLOUDY]: Cloud,
+  [Weather.RAINY]: CloudRain,
+  [Weather.STORMY]: Wind,
+  [Weather.SNOWY]: CloudSnow,
+  [Weather.FOGGY]: Cloud,
+};
+
 export default function ProjectsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const STATUS_TABS: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: t('common.labels.all') },
-    { value: ProjectStatus.IN_PROGRESS, label: ProjectStatusLabels[ProjectStatus.IN_PROGRESS] },
-    { value: ProjectStatus.COMPLETED, label: ProjectStatusLabels[ProjectStatus.COMPLETED] },
-    { value: ProjectStatus.PASSIVE, label: ProjectStatusLabels[ProjectStatus.PASSIVE] },
+    {
+      value: ProjectStatus.IN_PROGRESS,
+      label: ProjectStatusLabels[ProjectStatus.IN_PROGRESS],
+    },
+    {
+      value: ProjectStatus.COMPLETED,
+      label: ProjectStatusLabels[ProjectStatus.COMPLETED],
+    },
+    {
+      value: ProjectStatus.PASSIVE,
+      label: ProjectStatusLabels[ProjectStatus.PASSIVE],
+    },
+  ];
+
+  const TYPE_TABS: { value: TypeFilter; label: string }[] = [
+    { value: 'all', label: t('pages.projects.typeAll') },
+    { value: ProjectType.CO_BUILD, label: ProjectTypeLabels[ProjectType.CO_BUILD] },
+    { value: ProjectType.OWN_LAND, label: ProjectTypeLabels[ProjectType.OWN_LAND] },
+    { value: ProjectType.CONTRACT, label: ProjectTypeLabels[ProjectType.CONTRACT] },
+    {
+      value: ProjectType.URBAN_RENEWAL,
+      label: ProjectTypeLabels[ProjectType.URBAN_RENEWAL],
+    },
   ];
 
   const projectsQuery = useProjects();
@@ -77,7 +129,59 @@ export default function ProjectsPage() {
   const [activeTab, setActiveTab] = useState<StatusFilter>(
     ProjectStatus.IN_PROGRESS,
   );
+  const [activeTypeTab, setActiveTypeTab] = useState<TypeFilter>('all');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
+  // ── Hava durumu sorguları (her proje için bugün) ──
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const projectIds = useMemo(() => projects.map((p) => p.id), [projects]);
+
+  const weatherQueries = useQueries({
+    queries: useMemo(
+      () =>
+        projectIds.map((projectId) => ({
+          queryKey: ['weather', projectId, today],
+          queryFn: () => weatherFetcher(projectId, today),
+          staleTime: 1000 * 60 * 30,
+        })),
+      [projectIds, today],
+    ),
+  });
+
+  const weatherMap = useMemo<Record<string, WeatherData | null>>(() => {
+    const map: Record<string, WeatherData | null> = {};
+    projectIds.forEach((projectId, index) => {
+      const q = weatherQueries[index];
+      if (q?.data) {
+        map[projectId] = q.data;
+      }
+    });
+    return map;
+  }, [weatherQueries, projectIds]);
+
+  // ── Proje istatistikleri (personel/firma count) ──
+  const statsQueries = useQueries({
+    queries: useMemo(
+      () =>
+        projectIds.map((projectId) => ({
+          queryKey: ['project-stats', projectId],
+          queryFn: () => statsFetcher(projectId),
+          staleTime: 1000 * 60 * 5,
+        })),
+      [projectIds],
+    ),
+  });
+
+  const statsMap = useMemo<Record<string, ProjectStats | null>>(() => {
+    const map: Record<string, ProjectStats | null> = {};
+    projectIds.forEach((projectId, index) => {
+      const q = statsQueries[index];
+      if (q?.data) {
+        map[projectId] = q.data;
+      }
+    });
+    return map;
+  }, [statsQueries, projectIds]);
 
   const filtered = useMemo(() => {
     return projects.filter((p) => {
@@ -85,9 +189,11 @@ export default function ProjectsPage() {
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         (p.location ?? '').toLowerCase().includes(search.toLowerCase());
       const matchesStatus = activeTab === 'all' || p.status === activeTab;
-      return matchesSearch && matchesStatus;
+      const matchesType =
+        activeTypeTab === 'all' || p.type === activeTypeTab;
+      return matchesSearch && matchesStatus && matchesType;
     });
-  }, [projects, search, activeTab]);
+  }, [projects, search, activeTab, activeTypeTab]);
 
   const statusCounts = useMemo(
     () => ({
@@ -103,6 +209,25 @@ export default function ProjectsPage() {
       ).length,
       [ProjectStatus.PASSIVE]: projects.filter(
         (p) => p.status === ProjectStatus.PASSIVE,
+      ).length,
+    }),
+    [projects],
+  );
+
+  const typeCounts = useMemo(
+    () => ({
+      all: projects.length,
+      [ProjectType.CO_BUILD]: projects.filter(
+        (p) => p.type === ProjectType.CO_BUILD,
+      ).length,
+      [ProjectType.OWN_LAND]: projects.filter(
+        (p) => p.type === ProjectType.OWN_LAND,
+      ).length,
+      [ProjectType.CONTRACT]: projects.filter(
+        (p) => p.type === ProjectType.CONTRACT,
+      ).length,
+      [ProjectType.URBAN_RENEWAL]: projects.filter(
+        (p) => p.type === ProjectType.URBAN_RENEWAL,
       ).length,
     }),
     [projects],
@@ -171,59 +296,86 @@ export default function ProjectsPage() {
       </div>
 
       {/* Filtre bar */}
-      <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 border-b border-border pb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* Durum tab'ları */}
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {STATUS_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  'flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm',
+                  activeTab === tab.value
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                {tab.label}
+                <Badge
+                  variant={activeTab === tab.value ? 'secondary' : 'outline'}
+                  className="ml-0.5 h-4 min-w-4 text-[10px] sm:h-5 sm:min-w-5 sm:text-xs"
+                >
+                  {statusCounts[tab.value]}
+                </Badge>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 sm:ms-auto">
+            <div className="relative flex-1 sm:w-48">
+              <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={t('pages.projects.searchPlaceholder')}
+                className="h-8 w-full ps-8"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+            >
+              {viewMode === 'list' ? (
+                <>
+                  <LayoutGrid className="size-3.5" />
+                  {t('common.buttons.card')}
+                </>
+              ) : (
+                <>
+                  <List className="size-3.5" />
+                  {t('common.buttons.list')}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Tip tab'ları */}
         <div className="flex items-center gap-1.5 overflow-x-auto">
-          {STATUS_TABS.map((tab) => (
+          {TYPE_TABS.map((tab) => (
             <button
               key={tab.value}
               type="button"
-              onClick={() => setActiveTab(tab.value)}
-              className={
-                'flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm ' +
-                (activeTab === tab.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground')
-              }
+              onClick={() => setActiveTypeTab(tab.value)}
+              className={cn(
+                'flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium whitespace-nowrap transition-colors sm:text-xs',
+                activeTypeTab === tab.value
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
             >
               {tab.label}
-              <Badge
-                variant={activeTab === tab.value ? 'secondary' : 'outline'}
-                className="ml-0.5 h-4 min-w-4 text-[10px] sm:h-5 sm:min-w-5 sm:text-xs"
-              >
-                {statusCounts[tab.value]}
-              </Badge>
+              {typeCounts[tab.value] > 0 && (
+                <span className="text-[10px] opacity-70">
+                  {typeCounts[tab.value]}
+                </span>
+              )}
             </button>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2 sm:ms-auto">
-          <div className="relative flex-1 sm:w-48">
-            <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t('pages.projects.searchPlaceholder')}
-              className="h-8 w-full ps-8"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5"
-            onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-          >
-            {viewMode === 'list' ? (
-              <>
-                <LayoutGrid className="size-3.5" />
-                {t('common.buttons.card')}
-              </>
-            ) : (
-              <>
-                <List className="size-3.5" />
-                {t('common.buttons.list')}
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
@@ -235,6 +387,8 @@ export default function ProjectsPage() {
               const Icon = TYPE_ICONS[project.type] ?? Building2;
               const hasUnits = (project.total_units ?? 0) > 0;
               const landownerCount = project.landowner_units ?? 0;
+              const weather = weatherMap[project.id];
+              const stats = statsMap[project.id];
 
               return (
                 <button
@@ -250,6 +404,26 @@ export default function ProjectsPage() {
                     <h2 className="line-clamp-1 text-[15px] font-bold text-foreground">
                       {project.name}
                     </h2>
+                    {/* Hava Durumu Badge */}
+                    {weather && (
+                      <Badge
+                        variant="outline"
+                        className="h-5 shrink-0 gap-1 px-2 text-[11px]"
+                      >
+                        <span>{WeatherEmojis[weather.weather as Weather] ?? ''}</span>
+                        <span>
+                          {getEnumLabel(weather.weather, WeatherLabels)}
+                        </span>
+                        {weather.temperature_min_c !== null &&
+                          weather.temperature_max_c !== null && (
+                            <span className="tabular-nums">
+                              · {weather.temperature_min_c}°/
+                              {weather.temperature_max_c}°
+                            </span>
+                          )}
+                      </Badge>
+                    )}
+                    {/* Durum - en sağda */}
                     <Badge
                       variant={
                         ProjectStatusVariants[project.status] ?? 'secondary'
@@ -260,6 +434,7 @@ export default function ProjectsPage() {
                     </Badge>
                   </div>
 
+                  {/* İkinci satır - Sol: Konum, Sağ: Personel/Firma */}
                   <div className="mt-2 flex items-center justify-between text-[12px] text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <MapPin className="size-3 shrink-0 text-muted-foreground/60" />
@@ -270,11 +445,17 @@ export default function ProjectsPage() {
                     <div className="flex shrink-0 items-center gap-3">
                       <span className="flex items-center gap-1.5">
                         <Users className="size-3" />
-                        <span>{t('pages.projects.personnelCount')}</span>
+                        <span>
+                          {stats?.personnel_count ?? 0}{' '}
+                          {t('pages.projects.personnelCount')}
+                        </span>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Building2 className="size-3" />
-                        <span>{t('pages.projects.firmCount')}</span>
+                        <span>
+                          {stats?.firm_count ?? 0}{' '}
+                          {t('pages.projects.firmCount')}
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -319,8 +500,10 @@ export default function ProjectsPage() {
                       </div>
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="text-sm leading-none font-semibold tabular-nums">
-                          {(project.total_units ?? 0) -
-                            (project.sold_count ?? 0)}
+                          {formatNumber(
+                            (project.total_units ?? 0) -
+                              (project.sold_count ?? 0),
+                          )}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
                           {t('pages.projects.remaining')}
@@ -338,6 +521,10 @@ export default function ProjectsPage() {
               const Icon = TYPE_ICONS[project.type] ?? Building2;
               const hasUnits = (project.total_units ?? 0) > 0;
               const landownerCount = project.landowner_units ?? 0;
+              const weather = weatherMap[project.id];
+              const stats = statsMap[project.id];
+              const WeatherIcon =
+                WEATHER_ICONS[weather?.weather ?? ''] ?? Sun;
 
               return (
                 <button
@@ -353,6 +540,26 @@ export default function ProjectsPage() {
                     <h2 className="line-clamp-1 flex-1 text-lg font-bold">
                       {project.name}
                     </h2>
+                    {/* Hava Durumu */}
+                    {weather && (
+                      <Badge
+                        variant="outline"
+                        className="h-6 shrink-0 gap-1.5 px-2.5 text-[12px]"
+                      >
+                        <WeatherIcon className="size-3" />
+                        <span>
+                          {getEnumLabel(weather.weather, WeatherLabels)}
+                        </span>
+                        {weather.temperature_min_c !== null &&
+                          weather.temperature_max_c !== null && (
+                            <span className="tabular-nums">
+                              · {weather.temperature_min_c}° /{' '}
+                              {weather.temperature_max_c}°
+                            </span>
+                          )}
+                      </Badge>
+                    )}
+                    {/* Durum - en sağda */}
                     <Badge
                       variant={
                         ProjectStatusVariants[project.status] ?? 'secondary'
@@ -368,6 +575,22 @@ export default function ProjectsPage() {
                       <MapPin className="size-3.5 shrink-0 text-muted-foreground/60" />
                       <span className="truncate">
                         {project.location ?? t('pages.projects.noLocation')}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="flex items-center gap-1.5">
+                        <Users className="size-3.5" />
+                        <span>
+                          {stats?.personnel_count ?? 0}{' '}
+                          {t('pages.projects.personnelCount')}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Building2 className="size-3.5" />
+                        <span>
+                          {stats?.firm_count ?? 0}{' '}
+                          {t('pages.projects.firmCount')}
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -415,8 +638,10 @@ export default function ProjectsPage() {
                       <span className="h-6 w-px bg-border" />
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="tabular text-[18px] leading-none font-semibold tracking-tight">
-                          {(project.total_units ?? 0) -
-                            (project.sold_count ?? 0)}
+                          {formatNumber(
+                            (project.total_units ?? 0) -
+                              (project.sold_count ?? 0),
+                          )}
                         </span>
                         <span className="text-[10px] text-muted-foreground uppercase">
                           {t('pages.projects.remaining')}
@@ -435,12 +660,12 @@ export default function ProjectsPage() {
             <EmptyState
               icon={FolderOpen}
               title={
-                search || activeTab !== 'all'
+                search || activeTab !== 'all' || activeTypeTab !== 'all'
                   ? t('pages.projects.noResults')
                   : t('pages.projects.noProjects')
               }
               description={
-                search || activeTab !== 'all'
+                search || activeTab !== 'all' || activeTypeTab !== 'all'
                   ? t('common.messages.clearFilters')
                   : t('pages.projects.noProjectsDesc')
               }
@@ -450,4 +675,34 @@ export default function ProjectsPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Hava durumu fetch — useQueries'in `queryFn` closure'ı içinde hook kullanamayız
+ * (rules of hooks); bu yüzden direkt api.get ile çekilir.
+ * İlgili cache key'i useProjectWeather ile çakışmaması için özel prefix.
+ */
+async function weatherFetcher(
+  projectId: string,
+  date: string,
+): Promise<WeatherData | null> {
+  try {
+    const res = await api.get<{ data: WeatherData }>('/weather', {
+      params: { project_id: projectId, date },
+    });
+    return res.data;
+  } catch {
+    return null;
+  }
+}
+
+async function statsFetcher(projectId: string): Promise<ProjectStats | null> {
+  try {
+    const res = await api.get<{ data: ProjectStats }>(
+      `/projects/${projectId}/stats`,
+    );
+    return res.data;
+  } catch {
+    return null;
+  }
 }

@@ -613,3 +613,87 @@ export function useProjectPersonnel(
 
 // Type re-export for ergonomic consumers
 export type { Transaction };
+
+// ============================================
+// HAVA DURUMU (Weather) — Sprint 8.1
+// ============================================
+
+export type WeatherData = {
+  weather: string;
+  temperature_min_c: number | null;
+  temperature_max_c: number | null;
+};
+
+/**
+ * Proje konumuna göre belirli bir günün hava durumu.
+ * Laravel: GET /api/weather?project_id=&date=
+ * ŞantiyePro `lib/api.ts:weatherApi.getWeather` ile uyumlu.
+ */
+export function useProjectWeather(
+  projectId: string,
+  date: string,
+): UseQueryResult<{ data: WeatherData }, Error> {
+  return useQuery<{ data: WeatherData }, Error>({
+    queryKey: ['weather', projectId, date],
+    queryFn: () =>
+      api.get<{ data: WeatherData }>('/weather', {
+        params: { project_id: projectId, date },
+      }) as Promise<{ data: WeatherData }>,
+    enabled: Boolean(projectId),
+    staleTime: 1000 * 60 * 30, // 30 dakika cache
+  });
+}
+
+// ============================================
+// DEVAM (Attendance) — Sprint 8.1
+// ============================================
+
+type AttendanceResponse = PaginatedResponse<unknown>;
+
+/**
+ * Belirli bir gün için tüm projelerdeki devam kayıtları.
+ * Laravel: GET /api/attendance?date=
+ */
+export function useTodayAttendance(
+  date: string,
+  params: QueryParams = {},
+): UseQueryResult<AttendanceResponse, Error> {
+  return useQuery<AttendanceResponse, Error>({
+    queryKey: ['today-attendance', date, params],
+    queryFn: () =>
+      api.get<AttendanceResponse>('/attendance', {
+        params: { date, per_page: 500, ...params },
+      }) as Promise<AttendanceResponse>,
+    staleTime: 1000 * 60 * 5, // 5 dakika
+  });
+}
+
+// ============================================
+// PROJE İSTATİSTİKLERİ — Sprint 8.1
+// ============================================
+
+/**
+ * Proje özet sayıları (personel/firma/sözleşme sayısı).
+ * Laravel: GET /api/projects/{id}/stats
+ * ŞantiyePro'da her kart için ayrı istek atılıyor — burada
+ * çoklu çağrıyı kolaylaştırmak için batch pattern kullanılır.
+ */
+export type ProjectStats = {
+  personnel_count: number;
+  firm_count: number;
+  contract_count: number;
+};
+
+export function useProjectStats(
+  projectId: string,
+): UseQueryResult<{ data: ProjectStats }, Error> {
+  return useQuery<{ data: ProjectStats }, Error>({
+    queryKey: ['project-stats', projectId],
+    queryFn: () =>
+      api.get<{ data: ProjectStats }>(
+        `/projects/${projectId}/stats`,
+      ) as Promise<{ data: ProjectStats }>,
+    enabled: Boolean(projectId),
+    staleTime: 1000 * 60 * 5,
+  });
+}

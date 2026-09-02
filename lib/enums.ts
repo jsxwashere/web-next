@@ -372,3 +372,50 @@ export const TransactionKindLabels: Record<string, string> = {
   kd_collection: 'KD Tahsilatı',
   barter: 'Takas',
 };
+
+// ============================================
+// HAVA DURUMU (Weather)
+// ============================================
+
+export const Weather = {
+  SUNNY: 'sunny',
+  CLOUDY: 'cloudy',
+  RAINY: 'rainy',
+  STORMY: 'stormy',
+  SNOWY: 'snowy',
+  FOGGY: 'foggy',
+} as const;
+export type Weather = (typeof Weather)[keyof typeof Weather];
+
+export const WeatherLabels: Record<Weather, string> = {
+  [Weather.SUNNY]: 'Güneşli',
+  [Weather.CLOUDY]: 'Bulutlu',
+  [Weather.RAINY]: 'Yağmurlu',
+  [Weather.STORMY]: 'Fırtınalı',
+  [Weather.SNOWY]: 'Karlı',
+  [Weather.FOGGY]: 'Sisli',
+};
+
+export const WeatherEmojis: Record<Weather, string> = {
+  [Weather.SUNNY]: '☀️',
+  [Weather.CLOUDY]: '⛅',
+  [Weather.RAINY]: '🌧️',
+  [Weather.STORMY]: '⛈️',
+  [Weather.SNOWY]: '❄️',
+  [Weather.FOGGY]: '🌫️',
+};
+
+// ============================================
+// DEVAM (Attendance)
+// ============================================
+
+export const AttendanceStatus = {
+  FULL_DAY: 'full_day',
+  HALF_DAY: 'half_day',
+  PRESENT: 'present',
+  LATE: 'late',
+  ABSENT: 'absent',
+  EXCUSED: 'excused',
+} as const;
+export type AttendanceStatus =
+  (typeof AttendanceStatus)[keyof typeof AttendanceStatus];

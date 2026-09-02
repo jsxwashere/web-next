@@ -93,7 +93,8 @@
       "noActivity": "Henüz aktivite yok",
       "noActivityDesc": "Yapılan ödemeler, tahsilatlar ve saha raporları burada listelenir.",
       "daysOverdue": "Gün Gecikme",
-      "payment": "Ödeme"
+      "payment": "Ödeme",
+      "weatherTitle": "Aktif Şantiyeler — Bugünkü Hava"
     },
     "projects": {
       "title": "Projeler",
@@ -106,13 +107,18 @@
       "errorDesc": "Projeler yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin.",
       "location": "Konum",
       "noLocation": "Konum Belirtilmemiş",
-      "personnelCount": "0 Personel",
-      "firmCount": "0 Firma",
+      "personnelCount": "Personel",
+      "firmCount": "Firma",
       "total": "Toplam",
       "sold": "Satılan",
       "landowner": "Arsa P.",
       "remaining": "Kalan",
       "newProject": "Yeni Proje",
+      "weather": "Hava Durumu",
+      "typeFilter": "Proje Tipi",
+      "typeAll": "Tüm Tipler",
+      "progress": "İlerleme",
+      "allTypes": "Tüm Tipler",
       "wizard": {
         "title": "Yeni Proje Oluştur",
         "subtitle": "5 adımda projenizi oluşturun",
@@ -220,12 +226,33 @@
       "noResults": "Personel bulunamadı",
       "noResultsDesc": "Filtre veya arama kelimesini değiştirip tekrar deneyin.",
       "noPersonnel": "Henüz personel yok",
-      "noPersonnelDesc": "İlk personelinizi ekleyin."
+      "noPersonnelDesc": "İlk personelinizi ekleyin.",
+      "passive": "Pasif",
+      "left": "Ayrıldı",
+      "all": "Tümü",
+      "todayAtSite": "Bugün Şantiyede",
+      "todayAtSiteSub": "Devam kaydı alınan",
+      "monthlySalary": "Bu Ay Maaş (tahmini)",
+      "monthlySalarySub": "Aktif personelin maaş türüne göre",
+      "dailyCount": "Günlük",
+      "weeklyCount": "Haftalık",
+      "monthlyCount": "Aylık",
+      "salaryTypeFilter": "Maaş Tipi",
+      "salaryTypeAll": "Tüm Maaş Tipleri",
+      "activate": "Aktifleştir",
+      "deactivate": "Pasife al",
+      "reactivate": "Yeniden aktifleştir",
+      "reactivating": "Geri al",
+      "phone": "Telefon",
+      "wagePerDay": "/ Gün",
+      "wagePerWeek": "/ Hafta",
+      "wagePerMonth": "/ Ay"
     },
     "receipts": {
       "title": "Makbuzlar",
       "subtitle": "AI destekli dekont okuma ve arşivleme.",
       "uploadBank": "Banka dekontunu yükleyin; tutar, tarih ve karşı taraf otomatik",
+      "uploadCta": "Yeni Dekont",
       "noReceipts": "Henüz dekont yok",
       "noReceiptsDesc": "Yukarıdan bir banka dekontu yükleyin; tutar, tarih ve karşı taraf otomatik okunsun.",
       "noPending": "Bekleyen dekont yok",
@@ -236,10 +263,58 @@
       "noFileError": "Önce bir dekont seçin.",
       "confirmDelete": "Bu dekontu silmek istediğinizden emin misiniz?",
       "rereading": "Okunuyor…",
-      "reread": "Yeniden Oku"
+      "reread": "Yeniden Oku",
+      "stats": {
+        "total": "Toplam Dekont",
+        "accepted": "İşlenmiş",
+        "pending": "Okunuyor / İncelemede",
+        "failed": "Başarısız",
+        "totalHint": "Tüm zamanlar",
+        "acceptedHint": "Ödeme kaydına dönüştü",
+        "pendingHint": "Onayınız bekleniyor",
+        "failedHint": "Yeniden okunmalı"
+      },
+      "filters": {
+        "search": "Dekont ara...",
+        "all": "Tümü",
+        "noResults": "Filtreye uygun dekont yok",
+        "noResultsDesc": "Farklı bir filtre deneyin veya aramayı temizleyin.",
+        "completedHint": "{count} dekont tamamlandı (kabul/red)."
+      }
     },
     "account": {
       "title": "Hesap Ayarları",
+      "subtitle": "Hesap ve şirket ayarlarınızı buradan yönetin.",
+      "hero": {
+        "free": "Ücretsiz",
+        "pro": "Pro",
+        "enterprise": "Kurumsal",
+        "securityStatus": "Güvenlik durumu",
+        "upgrade": "Planı yükselt"
+      },
+      "groups": {
+        "account": {
+          "heading": "Hesap",
+          "description": "Kişisel bilgileriniz ve erişim ayarları."
+        },
+        "notifications": {
+          "heading": "Bildirimler & Görünüm",
+          "description": "Bildirim tercihleri ve görsel ayarlar."
+        },
+        "workflow": {
+          "heading": "İş Akışı",
+          "description": "Veri ve süreç ayarları."
+        },
+        "team": {
+          "heading": "Ekip & Destek",
+          "description": "Ekip yönetimi ve yardım."
+        }
+      },
+      "cards": {
+        "manage": "Yönet →",
+        "soon": "Yakında",
+        "notifyMe": "Bildirim al"
+      },
       "notifications": {
         "title": "Bildirimler",
         "description": "Bildirim tercihlerinizi yönetin"
