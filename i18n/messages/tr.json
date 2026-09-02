@@ -810,5 +810,28 @@
     "errorDesc": "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin.",
     "boundaryTitle": "Bu bölüm yüklenemedi",
     "boundaryDesc": "Beklenmeyen bir hata oluştu. Sayfayı yenilemeyi deneyebilir veya ana sayfaya dönebilirsiniz."
+  },
+  "auth": {
+    "signin": {
+      "title": "ŞantiyePro'ya Giriş Yap",
+      "demoNotice": "<0></0> kullanıcı adı ve <2></2> ile demo erişimini deneyebilirsiniz.",
+      "demoNoticeEmail": "demo@kt.com",
+      "demoNoticePassword": "demo123",
+      "googleSignin": "Google ile Giriş Yap",
+      "or": "veya",
+      "email": "E-posta",
+      "emailPlaceholder": "E-posta adresiniz",
+      "password": "Şifre",
+      "passwordPlaceholder": "Şifreniz",
+      "forgotPassword": "Şifremi unuttum",
+      "showPassword": "Şifreyi göster",
+      "hidePassword": "Şifreyi gizle",
+      "rememberMe": "Beni hatırla",
+      "submit": "Giriş Yap",
+      "signup": "Hesabın yok mu? Kayıt ol",
+      "signupLink": "Kayıt Ol",
+      "errorFallback": "Giriş başarısız. Lütfen tekrar deneyin.",
+      "unexpectedError": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
+    }
   }
 }

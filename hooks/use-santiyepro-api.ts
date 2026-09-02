@@ -143,7 +143,12 @@ export function useProjects(
     queryKey: ['projects', params],
     queryFn: () =>
       api.get<ProjectsResponse>('/projects', {
-        params: { per_page: 100, ...params },
+        // ECC P0-03 — N+1 fan-out sınırı. `useProjects` sayfa listesi
+        // + her proje için weather + stats paralel istek üretir.
+        // 100 proje × 2 endpoint = 200 paralel istek (browser'ı kilitler).
+        // 25 ile başlangıç yükü ~50'e düşer; kullanıcı "daha fazla" ile
+        // genişletebilir. Backend `?per_page=25` destekler (Sprint 4).
+        params: { per_page: 25, ...params },
       }) as Promise<ProjectsResponse>,
   });
 }

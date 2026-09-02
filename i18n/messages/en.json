@@ -659,5 +659,28 @@
     "errorDesc": "An unexpected error occurred. Please try refreshing the page.",
     "boundaryTitle": "This section failed to load",
     "boundaryDesc": "An unexpected error occurred. You can try refreshing the page or returning to the home page."
+  },
+  "auth": {
+    "signin": {
+      "title": "Sign in to ŞantiyePro",
+      "demoNotice": "Use <0></0> username and <2></2> for demo access.",
+      "demoNoticeEmail": "demo@kt.com",
+      "demoNoticePassword": "demo123",
+      "googleSignin": "Sign in with Google",
+      "or": "or",
+      "email": "Email",
+      "emailPlaceholder": "Your email",
+      "password": "Password",
+      "passwordPlaceholder": "Your password",
+      "forgotPassword": "Forgot password?",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "rememberMe": "Remember me",
+      "submit": "Sign in",
+      "signup": "Don't have an account? Sign up",
+      "signupLink": "Sign Up",
+      "errorFallback": "Sign-in failed. Please try again.",
+      "unexpectedError": "An unexpected error occurred. Please try again."
+    }
   }
 }

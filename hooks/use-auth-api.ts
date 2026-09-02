@@ -26,16 +26,38 @@
  *     NextAuth `jwt` callback'inde (cookie'de) kalır.
  *   - `useEffect` cleanup: StrictMode double-mount'ta singleton'ın sıfırlanmasını
  *     engeller; sadece konfig'i yeniler.
+ *
+ * **ECC P0-02 — race + first-render fix:**
+ *   - `hydrated` flag: ilk render'da `tokenProvider` null olduğunda
+ *     `apiFetchAuthed` çağrıları token'sız gider ve 401'e düşerdi. Artık
+ *     `hydrated === true` olmadan `configureAuthClient` çağrılmaz.
+ *   - Cleanup: `resetAuthClient()` StrictMode'un ikinci mount'undan ÖNCE
+ *     birinci mount'un cleanup'ı çalıştığında konfig'i sıfırlar; ikinci
+ *     mount yeniden konfigüre eder. Bu, session üzerine yazma race'ini
+ *     ortadan kaldırır.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { configureAuthClient } from '@/lib/api/client';
+import {
+  configureAuthClient,
+  resetAuthClient,
+} from '@/lib/api/client';
 
 export function useAuthApi(): void {
   const { data: session, update } = useSession();
+  const [hydrated, setHydrated] = useState(false);
+
+  // İlk mount sonrası hydrated=true. Bu sayede ilk render'da
+  // token henüz yokken konfig yazılıp `apiFetchAuthed` çağrıları
+  // yetim (orphan) token ile gitmez.
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
+
     configureAuthClient({
       // Sadece kısa ömürlü accessToken forward edilir
       tokenProvider: () => {
@@ -96,5 +118,12 @@ export function useAuthApi(): void {
         void signOut({ callbackUrl: '/signin', redirect: true });
       },
     });
-  }, [session?.user?.accessToken, session?.user?.accessTokenExpires, update]);
+
+    // P0-02 — StrictMode double-mount'ta ikinci mount'tan ÖNCE birinci
+    // mount'un cleanup'ı çalışır. resetAuthClient singleton'ı temizler
+    // ki yeni mount konfig'i overwrite etmesin / stale provider kalmasın.
+    return () => {
+      resetAuthClient();
+    };
+  }, [hydrated, session?.user?.accessToken, session?.user?.accessTokenExpires, update]);
 }

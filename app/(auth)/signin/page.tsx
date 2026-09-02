@@ -22,10 +22,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { LoaderCircleIcon } from 'lucide-react';
 import { Icons } from '@/components/common/icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { getSigninSchema, SigninSchemaType } from '../forms/signin-schema';
 
 export default function Page() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export default function Page() {
       if (!response || response.error) {
         // v4'te auth-options.ts JSON.stringify ile mesaj döndürüyordu.
         // v5'te hata düz string olarak gelir (authorize throw ettiği Error).
-        let message = 'Giriş başarısız. Lütfen tekrar deneyin.';
+        let message = t('auth.signin.errorFallback');
         if (response?.error) {
           try {
             const parsed = JSON.parse(response.error);
@@ -70,9 +72,7 @@ export default function Page() {
       router.refresh();
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred. Please try again.',
+        err instanceof Error ? err.message : t('auth.signin.unexpectedError'),
       );
     } finally {
       setIsProcessing(false);
@@ -87,7 +87,7 @@ export default function Page() {
       >
         <div className="space-y-1.5 pb-3">
           <h1 className="text-2xl font-semibold tracking-tight text-center">
-            Sign in to Metronic
+            {t('auth.signin.title')}
           </h1>
         </div>
 
@@ -96,10 +96,10 @@ export default function Page() {
             <RiErrorWarningFill className="text-primary" />
           </AlertIcon>
           <AlertTitle className="text-accent-foreground">
-            Use <span className="text-mono font-semibold">demo@kt.com</span>{' '}
-            username and{' '}
-            <span className="text-mono font-semibold">demo123</span> for demo
-            access.
+            {t('auth.signin.demoNotice', {
+              email: t('auth.signin.demoNoticeEmail'),
+              password: t('auth.signin.demoNoticePassword'),
+            })}
           </AlertTitle>
         </Alert>
 
@@ -108,9 +108,10 @@ export default function Page() {
             variant="outline"
             type="button"
             onClick={() => signIn('google', { callbackUrl: '/' })}
+            aria-label={t('auth.signin.googleSignin')}
           >
-            <Icons.googleColorful className="size-5! opacity-100!" /> Sign in
-            with Google
+            <Icons.googleColorful className="size-5! opacity-100!" />
+            {t('auth.signin.googleSignin')}
           </Button>
         </div>
 
@@ -119,12 +120,14 @@ export default function Page() {
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">or</span>
+            <span className="bg-background px-2 text-muted-foreground">
+              {t('auth.signin.or')}
+            </span>
           </div>
         </div>
 
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" role="alert">
             <AlertIcon>
               <AlertCircle />
             </AlertIcon>
@@ -137,9 +140,19 @@ export default function Page() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel htmlFor="signin-email">
+                {t('auth.signin.email')}
+              </FormLabel>
               <FormControl>
-                <Input placeholder="Your email" {...field} />
+                <Input
+                  id="signin-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  aria-required="true"
+                  placeholder={t('auth.signin.emailPlaceholder')}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -152,18 +165,24 @@ export default function Page() {
           render={({ field }) => (
             <FormItem>
               <div className="flex justify-between items-center gap-2.5">
-                <FormLabel>Password</FormLabel>
+                <FormLabel htmlFor="signin-password">
+                  {t('auth.signin.password')}
+                </FormLabel>
                 <Link
                   href="/reset-password"
                   className="text-sm font-semibold text-foreground hover:text-primary"
                 >
-                  Forgot Password?
+                  {t('auth.signin.forgotPassword')}
                 </Link>
               </div>
               <div className="relative">
                 <Input
-                  placeholder="Your password"
-                  type={passwordVisible ? 'text' : 'password'} // Toggle input type
+                  id="signin-password"
+                  type={passwordVisible ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  aria-required="true"
+                  placeholder={t('auth.signin.passwordPlaceholder')}
                   {...field}
                 />
                 <Button
@@ -171,10 +190,12 @@ export default function Page() {
                   variant="ghost"
                   mode="icon"
                   size="sm"
-                  onClick={() => setPasswordVisible(!passwordVisible)} // Toggle visibility
+                  onClick={() => setPasswordVisible(!passwordVisible)}
                   className="absolute end-0 top-1/2 -translate-y-1/2 h-7 w-7 me-1.5 bg-transparent!"
                   aria-label={
-                    passwordVisible ? 'Hide password' : 'Show password'
+                    passwordVisible
+                      ? t('auth.signin.hidePassword')
+                      : t('auth.signin.showPassword')
                   }
                 >
                   {passwordVisible ? (
@@ -204,7 +225,7 @@ export default function Page() {
                   htmlFor="remember-me"
                   className="text-sm leading-none text-muted-foreground"
                 >
-                  Remember me
+                  {t('auth.signin.rememberMe')}
                 </label>
               </>
             )}
@@ -212,19 +233,25 @@ export default function Page() {
         </div>
 
         <div className="flex flex-col gap-2.5">
-          <Button type="submit" disabled={isProcessing}>
-            {isProcessing ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
-            Continue
+          <Button
+            type="submit"
+            disabled={isProcessing}
+            aria-busy={isProcessing}
+          >
+            {isProcessing ? (
+              <LoaderCircleIcon className="size-4 animate-spin" />
+            ) : null}
+            {t('auth.signin.submit')}
           </Button>
         </div>
 
         <p className="text-sm text-muted-foreground text-center">
-          Don&apos;t have an account?{' '}
+          {t('auth.signin.signup')}
           <Link
             href="/signup"
-            className="text-sm font-semibold text-foreground hover:text-primary"
+            className="ms-1 text-sm font-semibold text-foreground hover:text-primary"
           >
-            Sign Up
+            {t('auth.signin.signupLink')}
           </Link>
         </p>
       </form>

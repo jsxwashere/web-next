@@ -7,7 +7,6 @@ import { Toaster } from '@/components/ui/sonner';
 import { Metadata } from 'next';
 import { AuthProvider } from '@/providers/auth-provider';
 import { I18nProvider } from '@/providers/i18n-provider';
-import { ModulesProvider } from '@/providers/modules-provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { DEFAULT_LANGUAGE_CODE } from '@/i18n/config';
@@ -56,12 +55,10 @@ export default async function RootLayout({
               <ThemeProvider>
                 <I18nProvider>
                   <TooltipsProvider>
-                    <ModulesProvider>
-                      <main id="main-content" className="flex-1">
-                        <Suspense>{children}</Suspense>
-                      </main>
-                      <Toaster />
-                    </ModulesProvider>
+                    <main id="main-content" className="flex-1">
+                      <Suspense>{children}</Suspense>
+                    </main>
+                    <Toaster />
                   </TooltipsProvider>
                 </I18nProvider>
               </ThemeProvider>
