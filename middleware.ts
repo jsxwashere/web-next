@@ -1,7 +1,11 @@
 /**
  * `middleware.ts`
  *
- * NextAuth v5 (Auth.js) — Edge middleware.
+ * NextAuth v4 (Auth.js) — Edge middleware.
+ *
+ * ÖNEMLİ: `auth.config.edge.ts` kullanılır (edge-safe minimal konfigürasyon).
+ * `auth.config.ts` CredentialsProvider + openid-client bağımlılıkları içerir ve
+ * edge runtime'da yüklenemez. Bu yüzden ayrı tutulur.
  *
  * Kurallar:
  *   - `app/(protected)/*` → auth zorunlu, yoksa `/signin` redirect
@@ -9,24 +13,17 @@
  *   - `app/api/*` → public (Laravel API'ye proxy gerekmiyor,
  *     frontend axios doğrudan çağırıyor)
  *   - Statik varlıklar, `/_next/*`, `/public/*` → public
- *
- * `authConfig.callbacks.authorized` fonksiyonu zaten yukarıda
- * `pathname.startsWith('/signin')` mantığını kurmuş durumda —
- * burada yalnızca `matcher` ile uygulama kapsamını sınırlıyoruz.
  */
 
 import NextAuth from 'next-auth';
-import { authConfig } from './auth.config';
+import { authConfigEdge } from './auth.config.edge';
 
-// Edge middleware'de yalnızca edge-safe konfigürasyon çalıştırılır
-// (prisma adapter vb. dahil edilmez).
-const { auth } = NextAuth(authConfig);
+// Edge middleware'de yalnızca edge-safe konfigürasyon çalıştırılır.
+// openid-client / CredentialsProvider / openid-client bağımlılıkları dahil edilmez.
+const { auth } = NextAuth(authConfigEdge);
 
 export default auth((_request: unknown) => {
-  // authConfig.callbacks.authorized zaten karar veriyor — burada ek
-  // bir şey yapmaya gerek yok. Boş bırakılırsa NextAuth yukarıdaki
-  // callback'i otomatik kullanır.
-  // Bu fonksiyonun varlığı, `auth` middleware'inin devreye girmesini sağlar.
+  // authConfigEdge.callbacks.authorized karar veriyor — burada ek bir şey gerekmez.
   void _request;
 });
 
