@@ -47,11 +47,14 @@ import { ReceiptStatus, type ReceiptStatus as ReceiptStatusKey } from '@/lib/enu
 import type { ReceiptItem } from '@/lib/api/types';
 
 export interface ReceiptsContentProps {
-  /** Sprint 6.5 NewReceiptSheet'i burada tetikler. */
-  onOpenNewReceipt: () => void;
+  /** Sprint 6.5 NewReceiptSheet'i burada tetikler.
+   *  Opsiyonel — sayfa (page.tsx) server component olduğu için
+   *  function prop geçiremez; ReceiptsContent kendi içinde default
+   *  scroll davranışı uygular. */
+  onOpenNewReceipt?: () => void;
 }
 
-export function ReceiptsContent({ onOpenNewReceipt }: ReceiptsContentProps) {
+export function ReceiptsContent({ onOpenNewReceipt }: ReceiptsContentProps = {}) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

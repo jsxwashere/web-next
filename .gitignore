@@ -21,3 +21,10 @@ dist-ssr
 # Build artifacts
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+.playwright/

@@ -25,10 +25,8 @@ import { ReceiptsContent } from './_components/content';
 
 export default function ReceiptsPage() {
   // "Yeni Dekont" mevcut Sprint 6.5 akışıyla aynı — upload kartını
-  // scrollIntoView ile sayfanın başına götürür. Modal yerine inline akış.
-  return <ReceiptsContent onOpenNewReceipt={() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }} />;
+  // scrollIntoView ile sayfanın başına götürür.
+  // Scroll mantığı ReceiptsContent (client component) içinde yönetilir;
+  // server component function prop geçiremez (Next.js 15 kısıtlaması).
+  return <ReceiptsContent />;
 }
